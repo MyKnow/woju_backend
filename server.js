@@ -1,27 +1,24 @@
 // server.js
+
 const express = require('express');
-const mongoose = require('mongoose');
+const { connectDB } = require('./utils/db'); // DB 연결 로직
 const userRoutes = require('./routes/userRoutes');
 const cors = require('cors');
 const morgan = require('morgan');
 
-// .env 파일을 사용하기 위한 설정
-require('dotenv').config();
+
 
 // Express 앱 생성
 const app = express();
 app.use(cors()); // CORS 미들웨어 추가
-app.use(express.json()); // JSON 요청 바디를 파싱하기 위한 미들웨어
+app.use(express.json({limit: '10mb'})); // JSON 요청 바디를 파싱하기 위한 미들웨어
 app.use(morgan('combined')); // 'combined'는 로그 포맷 중 하나로, 자세한 정보를 제공합니다.
 
 // MongoDB 연결 설정
-mongoose.connect(process.env.MONGODB_URI, {
-})
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+connectDB(); // 서버 시작 시 DB 연결
 
 // 라우터 설정
-app.use('/api', userRoutes); // "/api/check-user" 경로를 통해 접근 가능
+app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청은 userRoutes 라우터로 전달됩니다.
 
 // 서버 실행
 const PORT = process.env.PORT || 3000;

@@ -2,8 +2,39 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  uid: { type: String, required: true, unique: true },
+  // Firebase Auth에서 발급한 UID
+  userUID: { type: String, required: true, unique: true },
+
+  // 사용자 기기 식별자
+  userDeviceID: { type: String, required: true },
+
+  // 사용자 전화번호
   userPhoneNumber: { type: String, required: true, unique: true },
+
+  // 국가 코드
+  dialCode: { type: String, required: true },
+
+  // 사용자 아이디
+  userID: { type: String, required: true, unique: true },
+
+  // 사용자 비밀번호 (암호화하여 저장)
+  userPassword: { type: String, required: true },
+
+  // 사용자 프로필 이미지
+  userProfileImage: { type: Buffer, default: null },
+
+  // 사용자 닉네임, 성별, 생년월일
+  userNickName: { type: String, default: '' },
+  userGender: { type: String, default: 'private' },
+  userBirthDate: { type: String, default: '2000-01-01' },
+
+  // 사용자 생성일, 마지막 로그인 일
+  createdAt: { type: Date, default: Date.now },
+  lastLoginAt: { type: Date, default: Date.now },
+  
+  // 회원가입 시 고유한 ID를 생성함
+  // 이 ID를 사용하여 사용자 정보를 조회할 수 있음
+  userUniqueID: { type: String, unique: true, default: mongoose.Types.ObjectId }
 });
 
 const SignupUser = mongoose.model('SignupUser', userSchema);
