@@ -15,10 +15,10 @@ router.post('/signup', userController.signupUser);
 // 사용자 로그인 API 엔드포인트
 router.post('/login', userController.loginUser);
 
-// // 사용자 탈퇴 API 엔드포인트
-// router.post('/withdraw', userController.withdrawUser);
+// 사용자 탈퇴 API 엔드포인트
+router.post('/withdraw', userController.withdrawUser);
 
-// // 사용자 정보 수정 API 엔드포인트
+// 사용자 정보 수정 API 엔드포인트
 // router.post('/update', userController.updateUser);
 
 

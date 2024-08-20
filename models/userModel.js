@@ -24,17 +24,13 @@ const userSchema = new mongoose.Schema({
   userProfileImage: { type: Buffer, default: null },
 
   // 사용자 닉네임, 성별, 생년월일
-  userNickName: { type: String, default: '' },
+  userNickName: { type: String, default: null },
   userGender: { type: String, default: 'private' },
   userBirthDate: { type: String, default: '2000-01-01' },
 
   // 사용자 생성일, 마지막 로그인 일
   createdAt: { type: Date, default: Date.now },
   lastLoginAt: { type: Date, default: Date.now },
-  
-  // 회원가입 시 고유한 ID를 생성함
-  // 이 ID를 사용하여 사용자 정보를 조회할 수 있음
-  userUniqueID: { type: String, unique: true, default: mongoose.Types.ObjectId }
 });
 
 const SignupUser = mongoose.model('SignupUser', userSchema);

@@ -373,3 +373,25 @@ describe('loginUser', () => {
   });
 });
 
+describe('withdrawUser', () => {
+  it('등록된 사용자 정보로 탈퇴 요청을 보낸 경우, 탈퇴가 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/withdraw').send({ userID: 'test', userPassword: 'test' });
+
+    expect(response.status).toBe(200);
+  });
+
+  it('등록되지 않은 사용자 정보로 탈퇴 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/withdraw').send({ userID: 'test', userPassword: 'test' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/withdraw').send({ userID: 'test' });
+
+    expect(response.status).toBe(400);
+  });
+});
+
