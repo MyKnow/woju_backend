@@ -18,8 +18,11 @@ router.post('/login', userController.loginUser);
 // 사용자 탈퇴 API 엔드포인트
 router.post('/withdraw', userController.withdrawUser);
 
-// 사용자 정보 수정 API 엔드포인트
-// router.post('/update', userController.updateUser);
+// 사용자 ID 수정 API 엔드포인트
+router.post('/update-user-id', userController.updateUserID);
+
+// 사용자 비밀번호 수정 API 엔드포인트
+router.post('/update-user-password', userController.updateUserPassword);
 
 
 module.exports = router;

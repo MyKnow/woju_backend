@@ -35,7 +35,7 @@ describe('checkPhoneNumberAvailable', () => {
   it('전화번호가 사용 가능한 경우, TempPhoneNumber에 저장하고, 사용 가능함을 응답해야 한다.', async () => {
     const response = await request(app)
       .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
@@ -47,22 +47,22 @@ describe('checkPhoneNumberAvailable', () => {
   });
 
   it('이미 TempPhoneNumber에 등록된 전화번호의 경우, 사용 불가 응답을 반환해야 한다.', async () => {
-    await TempPhoneNumber.create({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82'});
+    await TempPhoneNumber.create({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82', isoCode: 'KR'});
 
     const response = await request(app)
     .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
     expect(response.status).toBe(400);
     expect(response.body.isAvailable).toBe(false);
   });
 
   it('이미 TempPhoneNumber에 등록된 전화번호를 최초 User가 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
-    await TempPhoneNumber.create({ userDeviceID: 'testDeviceIDForSuccess', userPhoneNumber: '0123456789' , dialCode: '+82'});
+    await TempPhoneNumber.create({ userDeviceID: 'testDeviceIDForSuccess', userPhoneNumber: '0123456789' , dialCode: '+82', isoCode: 'KR'});
 
     const response = await request(app)
     .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'testDeviceIDForSuccess', userPhoneNumber: '12345678901', dialCode: '+82' });
+      .send({ userDeviceID: 'testDeviceIDForSuccess', userPhoneNumber: '12345678901', dialCode: '+82', isoCode: 'KR' });
 
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
@@ -70,12 +70,12 @@ describe('checkPhoneNumberAvailable', () => {
 
   it('동일한 전화번호로 최초 User가 연속해서 2번 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
     // TempPhoneNumber에 유저 정보 저장
-    await TempPhoneNumber.create({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+    await TempPhoneNumber.create({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
     // 첫 번째 요청
     let reponse = await request(app)
       .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
     // 첫 번째 요청 결과 확인
     expect(reponse.status).toBe(200);
@@ -84,7 +84,7 @@ describe('checkPhoneNumberAvailable', () => {
     // 두 번째 요청
     reponse = await request(app)
       .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
     // 두 번째 요청 결과 확인
     expect(reponse.status).toBe(200);
@@ -99,21 +99,21 @@ describe('checkPhoneNumberAvailable', () => {
   });
 
   it('이미 SignupUser에 등록된 전화번호의 경우, uid가 다르다면 사용 불가 응답을 반환해야 한다.', async () => {
-    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
     const response = await request(app)
     .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+      .send({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
     expect(response.status).toBe(400);
     expect(response.body.isAvailable).toBe(false);
   });
 
   it('이미 SignupUser에 등록된 전화번호를 최초 User가 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
-    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
 
     const response = await request(app)
     .post('/api/user/check-phonenumber-available')
-      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '0123456789', dialCode: '+82' });
+      .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '0123456789', dialCode: '+82', isoCode: 'KR' });
 
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
@@ -189,7 +189,7 @@ describe('checkUserIDAvailable', () => {
   });
 
   it('이미 SignupUser에 등록된 아이디의 경우, uid가 다르다면 사용 불가 응답을 반환해야 한다.', async () => {
-    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testUID', userPhoneNumber: '1234567890', userID: 'testUserID', userPassword : 'test', dialCode: '+82' });
+    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testUID', userPhoneNumber: '1234567890', userID: 'testUserID', userPassword : 'test', dialCode: '+82', isoCode: 'KR' });
 
     const response = await request(app).post('/api/user/check-userid-available').send({ userUID: 'anotherUID', userID: 'testUserID' });
 
@@ -198,7 +198,7 @@ describe('checkUserIDAvailable', () => {
   });
 
   it('이미 SignupUser에 등록된 아이디를 최초 User가 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
-    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testUID', userPhoneNumber: '1234567890', userID: 'test', userPassword : 'test', dialCode: '+82' });
+    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testUID', userPhoneNumber: '1234567890', userID: 'test', userPassword : 'test', dialCode: '+82', isoCode: 'KR' });
 
     const response = await request(app)
     .post('/api/user/check-userid-available')
@@ -217,7 +217,7 @@ describe('signupUser', () => {
         userDeviceID: 'testDeviceID',
         userUID: 'testUID',
         userPhoneNumber: '1234567890',
-        dialCode: '+82',
+        dialCode: '+82', isoCode: 'KR',
         userID: 'testUserID',
         userPassword: 'testPassword',
         userProfileImage: null,
@@ -229,8 +229,32 @@ describe('signupUser', () => {
     expect(response.status).toBe(200);
   });
 
+  it('회원가입을 성공하면, 회원 정보가 DB에 저장되어야 한다.', async () => {
+    const response = await request(app)
+      .post('/api/user/signup')
+      .send({
+        userDeviceID: 'testDeviceID',
+        userUID: 'testUID',
+        userPhoneNumber: '1234567890',
+        dialCode: '+82', isoCode: 'KR',
+        userID: 'testUserID',
+        userPassword: 'testPassword',
+        userProfileImage: null,
+        userNickName: 'testNickName',
+        userGender: 'private',
+        userBirthDate: '2000-01-01',
+      });
+
+    expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: 'testUserID' });
+
+    expect(user).not.toBeNull();
+    expect(user.userID).toBe('testUserID');
+  });
+
   it('이미 TempPhoneNumber에 등록된 전화번호로 회원가입 요청을 보낸 경우, userDeviceID가 다르다면 사용 불가 응답을 반환해야 한다.', async () => {
-    await TempPhoneNumber.create({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82'});
+    await TempPhoneNumber.create({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82', isoCode: 'KR'});
 
     const response = await request(app)
       .post('/api/user/signup')
@@ -238,7 +262,7 @@ describe('signupUser', () => {
         userDeviceID: 'testDeviceID',
         userUID: 'testUID',
         userPhoneNumber: '1234567890',
-        dialCode: '+82',
+        dialCode: '+82', isoCode: 'KR',
         userID: 'testUserID',
         userPassword: 'testPassword',
         userProfileImage: null,
@@ -259,7 +283,7 @@ describe('signupUser', () => {
         userDeviceID: 'testDeviceID',
         userUID: 'testUID',
         userPhoneNumber: '1234567890',
-        dialCode: '+82',
+        dialCode: '+82', isoCode: 'KR',
         userID: 'testUserID',
         userPassword: 'testPassword',
         userProfileImage: null,
@@ -272,7 +296,7 @@ describe('signupUser', () => {
   });
 
   it ('이미 SignupUser에 등록된 정보로 회원가입 요청을 보낸 경우, 사용 불가 응답을 반환해야 한다.', async () => {
-    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+    await SignupUser.create({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
 
     const response = await request(app)
       .post('/api/user/signup')
@@ -280,7 +304,7 @@ describe('signupUser', () => {
         userDeviceID: 'testDeviceID',
         userUID: 'testUID',
         userPhoneNumber: '1234567890',
-        dialCode: '+82',
+        dialCode: '+82', isoCode: 'KR',
         userID: 'testUserID',
         userPassword: 'testPassword',
         userProfileImage: null,
@@ -293,7 +317,7 @@ describe('signupUser', () => {
   });
 
   it('회원가입 요청이 정상적으로 처리되면, TempPhoneNumber, TempUserID에 저장된 정보가 삭제되어야 한다.', async () => {
-    await TempPhoneNumber.create({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82'});
+    await TempPhoneNumber.create({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82', isoCode: 'KR'});
     await TempUserID.create({ userUID: 'testUID', userID: 'testUserID' });
 
     const response = await request(app)
@@ -302,7 +326,7 @@ describe('signupUser', () => {
         userDeviceID: 'testDeviceID',
         userUID: 'testUID',
         userPhoneNumber: '1234567890',
-        dialCode: '+82',
+        dialCode: '+82', isoCode: 'KR',
         userID: 'testUserID',
         userPassword: 'testPassword',
         userProfileImage: null,
@@ -327,7 +351,7 @@ describe('signupUser', () => {
         userDeviceID: 'testDeviceID',
         userUID: 'testUID',
         userPhoneNumber: '1234567890',
-        dialCode: '+82',
+        dialCode: '+82', isoCode: 'KR',
         userID: 'testUserID',
         userPassword: 'testPassword',
         userProfileImage: null,
@@ -348,22 +372,22 @@ describe('signupUser', () => {
 
 describe('loginUser', () => {
   it('등록된 사용자 정보로 로그인 요청을 보낸 경우, 로그인이 정상적으로 처리되어야 한다.', async () => {
-    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
 
-    const response = await request(app).post('/api/user/login').send({ userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword: 'test' });
+    const response = await request(app).post('/api/user/login').send({ userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword: 'test' });
 
     expect(response.status).toBe(200);
   });
 
   it('등록되지 않은 사용자 정보로 로그인 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
     const response = await request(app).post('/api/user/login').send({ userPhoneNumber
-      : '1234567890', dialCode: '+82', userID: 'test', userPassword: 'test' });
+      : '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword: 'test' });
 
     expect(response.status).toBe(400);
   });
 
   it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
-    const response = await request(app).post('/api/user/login').send({ userPhoneNumber : '1234567890', dialCode: '+82', userID: 'test' });
+    const response = await request(app).post('/api/user/login').send({ userPhoneNumber : '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test' });
   });
 
   it('아이디 또는 전화번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
@@ -375,11 +399,21 @@ describe('loginUser', () => {
 
 describe('withdrawUser', () => {
   it('등록된 사용자 정보로 탈퇴 요청을 보낸 경우, 탈퇴가 정상적으로 처리되어야 한다.', async () => {
-    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
 
     const response = await request(app).post('/api/user/withdraw').send({ userID: 'test', userPassword: 'test' });
 
     expect(response.status).toBe(200);
+  });
+
+  it('등록된 사용자 정보로 탈퇴 요청을 보낸 경우, 탈퇴 후 사용자 정보가 삭제되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    await request(app).post('/api/user/withdraw').send({ userID: 'test', userPassword: 'test' });
+
+    const user = await SignupUser.findOne({ userID: 'test' });
+
+    expect(user).toBeNull();
   });
 
   it('등록되지 않은 사용자 정보로 탈퇴 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
@@ -390,6 +424,58 @@ describe('withdrawUser', () => {
 
   it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
     const response = await request(app).post('/api/user/withdraw').send({ userID: 'test' });
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('update-user-id', () => {
+  it('등록된 사용자 정보로 정보 수정 요청을 보낸 경우, 정보 수정이 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
+
+    expect(response.status).toBe(200);
+  });
+
+  it ('등록되지 않은 사용자 정보로 정보 수정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'wrongPassword' });
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('update-user-password', () => {
+  it('등록된 사용자 정보로 비밀번호 수정 요청을 보낸 경우, 비밀번호 수정이 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/update-user-password').send({ userID: 'test', oldPassword: 'test', newPassword: 'newTest' });
+
+    expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: 'test' });
+
+    expect(await comparePassword('newTest', user.userPassword)).toBe(true);
+  });
+
+  it('등록되지 않은 사용자 정보로 비밀번호 수정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/update-user-password').send({ userID: 'test', oldPassword: 'test', newPassword: 'newTest' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('기존 비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/update-user-password').send({ userID: 'test', oldPassword: 'wrongPassword', newPassword: 'newTest' });
 
     expect(response.status).toBe(400);
   });

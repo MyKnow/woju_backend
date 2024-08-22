@@ -14,6 +14,9 @@ const userSchema = new mongoose.Schema({
   // 국가 코드
   dialCode: { type: String, required: true },
 
+  // iso 국가 코드
+  isoCode: { type: String, required: true },
+
   // 사용자 아이디
   userID: { type: String, required: true, unique: true },
 
