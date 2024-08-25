@@ -13,7 +13,7 @@ jobs:
 
       - name: Decrypt .env file
         run: |
-          echo "${{ secrets.PASSWORD }}" | openssl enc -aes-256-cbc -d -in .env.enc -out .env -k stdin
+          echo "${{ secrets.PASSWORD }}" | openssl aes-256-cbc -pbkdf2 -d -in .env.enc -out .env -k stdin
         env:
           PASSWORD: ${{ secrets.PASSWORD }}
 
