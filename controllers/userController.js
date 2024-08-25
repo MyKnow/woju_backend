@@ -10,7 +10,7 @@ const { hashPassword, comparePassword } = require('../utils/crypto');        // 
 exports.checkPhoneNumberAvailable = async (req, res) => {
   const { userDeviceID, userPhoneNumber, dialCode, isoCode } = req.body;  // 요청 본문에서 userDeviceID와 전화번호를 가져옴
 
-  console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)\nuserDeviceID : %s\nuserPhoneNumber : %s\ndialCode", process.env.NODE_ENV, userDeviceID, userPhoneNumber, dialCode);
+  console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
 
   // checkPhoneNumberAvailableFunction 함수 실행
@@ -18,7 +18,10 @@ exports.checkPhoneNumberAvailable = async (req, res) => {
 
   // 결과에 따라 응답
   if (result.isAvailable) {
-    return res.status(200).json({ isAvailable: true, message: '해당 전화번호는 사용 가능합니다.' });
+    if (result.isAlreadyRegistered) {
+      return res.status(200).json({ isAvailable: true, isAlreadyRegistered: true, message: '해당 전화번호는 사용 가능하나, 본인이 사용 중입니다.' });
+    }
+    return res.status(200).json({ isAvailable: true, isAlreadyRegistered: false, message: '해당 전화번호는 사용 가능합니다.' });
   } else {
     if (result.error) {
       return res.status(500).json({ isAvailable: false, message: '서버 오류' });
@@ -87,7 +90,7 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
 exports.checkUserIDAvailable = async (req, res) => {
   const { userUID, userID } = req.body;
 
-  console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)\nuserUID : %s\nuserID : %s", process.env.NODE_ENV, userUID, userID);
+  console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
 
   // checkUserIDAvailableFunction 함수 실행
@@ -204,7 +207,7 @@ exports.signupUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   const { userPhoneNumber, dialCode, isoCode, userID, userPassword, userDeviceID } = req.body;
 
-  console.log("/api/user/login 요청 (NODE_ENV : %s)\nuserPhoneNumber : %s\ndialCode : %s", process.env.NODE_ENV, userPhoneNumber, dialCode);
+  console.log("/api/user/login 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     // 전화번호와 아이디가 둘 다 없는 경우, 사용자 정보가 없다고 응답
@@ -262,7 +265,9 @@ exports.loginUser = async (req, res) => {
 exports.withdrawUser = async (req, res) => {
   const {  userID, userPassword } = req.body;
 
-  console.log("/api/user/withdraw 요청 (NODE_ENV : %s)\nuserID : %s", process.env.NODE_ENV, userID);
+  console.log("/api/user/withdraw 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+
+  console.log("userID : %s, userPassword : %s", userID, userPassword);
 
   try {
     const user = await SignupUser.findOne({ userID: userID });
@@ -303,7 +308,7 @@ exports.withdrawUser = async (req, res) => {
 exports.updateUserID = async (req, res) => {
   const { oldUserID, newUserID, userPassword, userUID } = req.body;
 
-  console.log("/api/user/update 요청 (NODE_ENV : %s)\noldUserID : %s\nnewUserID : %s", process.env.NODE_ENV, oldUserID, newUserID);
+  console.log("/api/user/update 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userID : oldUserID });
@@ -353,7 +358,7 @@ exports.updateUserID = async (req, res) => {
 exports.updateUserPassword = async (req, res) => {
   const { userID, oldPassword, newPassword } = req.body;
 
-  console.log("/api/user/update-password 요청 (NODE_ENV : %s)\nuserID : %s", process.env.NODE_ENV, userID);
+  console.log("/api/user/update-user-password 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userID: userID });
@@ -389,3 +394,62 @@ exports.updateUserPassword = async (req, res) => {
     return res.status(500).json({ isSuccess: false, message: '서버 오류' });
   }
 }
+
+/// 사용자 비밀번호 재설정 엔드포인트
+exports.resetUserPassword = async (req, res) => {
+  const {userUID, newPassword } = req.body;
+
+  console.log("/api/user/reset-user-password 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+
+  try {
+    const user = await SignupUser.findOne({ userUID: userUID });
+
+    if (!user) {
+      console.log('사용자 정보 없음');
+      return res.status(400).json({ isSuccess: false, message: '사용자 정보가 없습니다.' });
+    }
+
+    // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
+    if (!newPassword || newPassword.trim() === '') {
+      console.log('비밀번호가 없음');
+      return res.status(400).json({ isSuccess: false, message: '비밀번호를 입력해주세요.' });
+    }
+
+    console.log('비밀번호 수정 시작');
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    await SignupUser.updateOne({ userUID: userUID }, { userPassword: hashedPassword });
+
+    return res.status(200).json({ isSuccess: true });
+
+  } catch (error) {
+    // 예외 발생 시, 서버 오류로 응답하고 콘솔에 오류 로그 출력
+    console.error('비밀번호 수정 중 오류 발생:', error);
+    return res.status(500).json({ isSuccess: false, message: '서버 오류' });
+  }
+}
+
+/// 사용자 가입 여부 조회 엔드포인트
+exports.checkUserExists = async (req, res) => {
+  const { userUID } = req.body;
+
+  console.log("/api/user/check-user-exists 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+
+  try {
+    const user = await SignupUser.findOne({ userUID: userUID });
+
+    if (!user) {
+      console.log('사용자 정보 없음');
+      return res.status(400).json({ isExists: false });
+    }
+
+    return res.status(200).json({ isExists: true });
+  } catch (error) {
+    // 예외 발생 시, 서버 오류로 응답하고 콘솔에 오류 로그 출력
+    console.error('사용자 조회 중 오류 발생:', error);
+    return res.status(500).json({ isExists: false });
+  }
+}
+
+

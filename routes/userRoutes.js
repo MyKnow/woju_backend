@@ -24,5 +24,10 @@ router.post('/update-user-id', userController.updateUserID);
 // 사용자 비밀번호 수정 API 엔드포인트
 router.post('/update-user-password', userController.updateUserPassword);
 
+// 사용자 비밀번호 재설정 API 엔드포인트
+router.post('/reset-user-password', userController.resetUserPassword);
+
+// 사용자 가입 여부 조회 API 엔드포인트
+router.post('/check-user-exists', userController.checkUserExists);
 
 module.exports = router;
