@@ -15,7 +15,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "openssl enc -d -aes-256-cbc -in .env.enc -out .env -pass pass:$SECRET_KEY && node server.js"
+    "start": "openssl enc -d -aes-256-cbc -in .env.enc -out .env -k $password && node server.js"
+
   },
   "keywords": [],
   "author": "",
