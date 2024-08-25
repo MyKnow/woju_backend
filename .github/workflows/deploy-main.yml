@@ -1,0 +1,42 @@
+name: Deploy to Cloudtype
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Decrypt .env file
+        run: |
+          echo "${{ secrets.PASSWORD }}" | openssl enc -aes-256-cbc -d -in .env.enc -out .env -k stdin
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
+
+      - name: Connect deploy key
+        uses: cloudtype-github-actions/connect@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          ghtoken: ${{ secrets.GHP_TOKEN }}
+
+      - name: Deploy
+        uses: cloudtype-github-actions/deploy@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          project: myknow000/woju
+          stage: main
+          yaml: |
+            name: woju-backend
+            app: node@18
+            options:
+              env: []
+              buildenv: []
+              ports: "3031"
+            context:
+              git:
+                url: git@github.com:${{ github.repository }}.git
+                ref: ${{ github.ref }}
