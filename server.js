@@ -18,6 +18,14 @@ app.use(morgan('combined')); // 'combined'는 로그 포맷 중 하나로, 자�
 // MongoDB 연결 설정
 connectDB(); // 서버 시작 시 DB 연결
 
+// 연결 성공 시 콘솔에 출력
+connectDB().then(() => {
+  console.log('MongoDB connected');
+}
+).catch((e) => {
+  console.error(e);
+});
+
 // 라우터 설정
 app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청은 userRoutes 라우터로 전달됩니다.
 app.use('/api/service', serviceRoutes); // "/api/service" 경로로 시작하는 요청은 serviceRoutes 라우터로 전달됩니다.
