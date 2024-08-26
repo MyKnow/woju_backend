@@ -13,7 +13,7 @@ async function connectDB() {
   try {
     const uri = process.env.NODE_ENV === 'test'
       ? new MongoMemoryServer().getUri()
-      : process.env.MONGODB_URI;
+      : process.env.MONGO_USER_DB_URI;
 
     await mongoose.connect(uri);
     console.log('MongoDB connected');
