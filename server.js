@@ -15,9 +15,6 @@ app.use(cors()); // CORS 미들웨어 추가
 app.use(express.json({limit: '10mb'})); // JSON 요청 바디를 파싱하기 위한 미들웨어
 app.use(morgan('combined')); // 'combined'는 로그 포맷 중 하나로, 자세한 정보를 제공합니다.
 
-// MongoDB 연결 설정
-connectDB(); // 서버 시작 시 DB 연결
-
 // 연결 성공 시 콘솔에 출력
 connectDB().then(() => {
   console.log('MongoDB connected');
