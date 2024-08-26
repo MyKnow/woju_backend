@@ -46,7 +46,7 @@ jobs:
           password: ${{ secrets.RELEASE_SERVER_PASSWORD }}
           port: ${{ secrets.RELEASE_SERVER_PORT }}
           script: |
-            cd 
+            cd woju-server
             export DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/woju-user-server
             sed -i '/woju-user-server:/,/image:/s|image: .*|image: $DOCKER_IMAGE|' docker-compose.yml
             docker-compose pull woju-user-server
