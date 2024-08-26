@@ -1,4 +1,6 @@
-name: Deploy to Cloudtype
+# Name: Woju CI/CD for woju-user-server
+name: CI/CD for woju-user-server
+
 on:
   push:
     branches:
@@ -7,34 +9,45 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Decrypt .env file
-        run: openssl aes-256-cbc -d -pbkdf2 -in .env.enc -out .env -k ${{ secrets.PASSWORD}}
+      - name: Decrypt .env.enc
+        run: openssl aes-256-cbc -d -pbkdf2 -in .env.enc -out .env -k ${{ secrets.PASSWORD }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Connect deploy key
-        uses: cloudtype-github-actions/connect@v1
+      - name: Create and use a new builder
+        run: docker buildx create --use
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          token: ${{ secrets.CLOUDTYPE_TOKEN }}
-          ghtoken: ${{ secrets.GHP_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Deploy
-        uses: cloudtype-github-actions/deploy@v1
+      - name: Build and push Docker Image
+        uses: docker/build-push-action@v2
         with:
-          token: ${{ secrets.CLOUDTYPE_TOKEN }}
-          project: myknow000/woju
-          stage: main
-          yaml: |
-            name: woju-backend
-            app: node@18
-            options:
-              env: []
-              buildenv: []
-              ports: "3031"
-            context:
-              git:
-                url: git@github.com:${{ github.repository }}.git
-                ref: ${{ github.ref }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/woju-user-server
+
+      - name: Deploy Docker Image to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.RELEASE_SERVER_HOST }}
+          username: ${{ secrets.RELEASE_SERVER_USER }}
+          password: ${{ secrets.RELEASE_SERVER_PASSWORD }}
+          port: ${{ secrets.RELEASE_SERVER_PORT }}
+          script: |
+            cd 
+            export DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/woju-user-server
+            sed -i '/woju-user-server:/,/image:/s|image: .*|image: $DOCKER_IMAGE|' docker-compose.yml
+            docker-compose pull woju-user-server
+            docker-compose up -d woju-user-server

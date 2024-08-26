@@ -23,7 +23,7 @@ app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청�
 app.use('/api/service', serviceRoutes); // "/api/service" 경로로 시작하는 요청은 serviceRoutes 라우터로 전달됩니다.
 
 // 서버 실행
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
