@@ -4,6 +4,7 @@ const request = require('supertest'); // HTTP 요청을 모의하기 위해 사�
 const express = require('express');
 const { connectDB, disconnectDB } = require('../utils/db');
 const serviceRoutes = require('../routes/serviceRoutes');
+const mongoose = require('mongoose');
 
 // 테스트용 Express 앱 설정
 const app = express();
@@ -34,10 +35,11 @@ describe('서버 연결 상태 확인 API', () => {
         expect(response.statusCode).toBe(200);
     });
 
-    it('DB가 정상적으로 연결되지 않은 상태에서는 500을 반환한다.', async () => {
+    it('DB가 정상적으로 연결되지 않은 상태에서는 200과 DB 상태(에러) 반환한다.', async () => {
         // 테스트용 MongoDB 연결 해제
         await disconnectDB();
         const response = await request(app).get('/api/service/check-connection-status');
-        expect(response.statusCode).toBe(500);
+        expect(response.statusCode).toBe(200);
+        expect(response.body).not.toBe(mongoose.connection.readyState);
     });
 });

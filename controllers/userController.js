@@ -452,4 +452,50 @@ exports.checkUserExists = async (req, res) => {
   }
 }
 
+/// 사용자 정보 업데이트 엔드포인트
+exports.updateUserInfo = async (req, res) => {
+  const { userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword } = req.body;
 
+  console.log("/api/user/update-user-info 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+
+  try {
+    const user = await SignupUser.findOne({ userID: userID });
+
+    if (!user) {
+      console.log('사용자 정보 없음');
+      return res.status(400).json({ isSuccess: false, message: '사용자 정보가 없습니다.' });
+    }
+
+    // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
+    if (!userPassword || userPassword.trim() === '') {
+      console.log('비밀번호가 없음');
+      return res.status(400).json({ isSuccess: false, message: '비밀번호를 입력해주세요.' });
+    }
+
+    // 비밀번호 비교
+    console.log('비밀번호 비교 시작');
+
+    const match = await comparePassword(userPassword, user.userPassword);
+
+    // 비밀번호가 일치하는 경우, 사용자 정보 업데이트
+
+    if (match) {
+      console.log('사용자 정보 업데이트 시작');
+
+      await SignupUser.updateOne({ userID: userID }, { userProfileImage: userProfileImage, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode, userNickName: userNickName, userGender: userGender, userBirthDate: userBirthDate });
+
+      return res.status(200).json({ isSuccess: true });
+    }
+    else {
+      console.log('비밀번호 불일치');
+      return res.status(400).json({ isSuccess: false, message: '비밀번호가 일치하지 않습니다.' });
+    }
+  }
+  catch (error) {
+    // 예외 발생 시, 서버 오류로 응답하고 콘솔에 오류 로그 출력
+    console.error('사용자 정보 업데이트 중 오류 발생:', error);
+    return res.status(500).json({ isSuccess: false, message: '서버 오류' });
+  }
+}
+
+    

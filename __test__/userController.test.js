@@ -436,12 +436,20 @@ describe('update-user-id', () => {
     const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
 
     expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: 'newTest' });
+
+    expect(user).not.toBeNull();
   });
 
   it ('등록되지 않은 사용자 정보로 정보 수정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
     const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
 
     expect(response.status).toBe(400);
+
+    const user = await SignupUser.findOne({ userID: 'newTest' });
+
+    expect(user).toBeNull();
   });
 
   it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
@@ -450,6 +458,10 @@ describe('update-user-id', () => {
     const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'wrongPassword' });
 
     expect(response.status).toBe(400);
+
+    const user = await SignupUser.findOne({ userID: 'newTest' });
+
+    expect(user).toBeNull();
   });
 });
 
