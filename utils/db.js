@@ -17,7 +17,7 @@ async function connectDB() {
       uri = process.env.MONGO_USER_DB_URI;
     }
 
-    await mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    await mongoose.connect(uri);
     console.log('MongoDB connected');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
