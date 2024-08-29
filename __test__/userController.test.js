@@ -396,6 +396,22 @@ describe('loginUser', () => {
 
     expect(response.status).toBe(400);
   });
+
+  it('아이디와 비밀번호만으로 로그인 요청을 보낸 경우, 로그인이 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/login').send({ userID: 'test', userPassword: 'test' });
+
+    expect(response.status).toBe(200);
+  });
+
+  it('전화번호와 비밀번호만으로 로그인 요청을 보낸 경우, 로그인이 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const response = await request(app).post('/api/user/login').send({ userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userPassword: 'test' });
+
+    expect(response.status).toBe(200);
+  });
 });
 
 describe('withdrawUser', () => {

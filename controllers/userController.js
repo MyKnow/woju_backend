@@ -218,12 +218,9 @@ exports.loginUser = async (req, res) => {
 
   try {
     // 전화번호와 아이디가 둘 다 없는 경우, 사용자 정보가 없다고 응답
-    if (!userPhoneNumber || userPhoneNumber.trim() === '') {
-      console.log('전화번호가 없음');
-      return res.status(400).json({ failureReason: FailureReason.PHONENUMBER_EMPTY, message: '전화번호를 입력해주세요.' });
-    } else if (!userID || userID.trim() === '') {
-      console.log('아이디가 없음');
-      return res.status(400).json({ failureReason: FailureReason.USER_ID_EMPTY, message: '아이디를 입력해주세요.' });
+    if ((!userPhoneNumber || userPhoneNumber.trim() === '') && (!userID || userID.trim() === '')) {
+      console.log('사용자 정보 없음');
+      return res.status(400).json({ failureReason: FailureReason.USER_LOGIN_INFO_EMPTY, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
