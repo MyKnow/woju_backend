@@ -1,7 +1,10 @@
-// models/userModel.js
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 
 const userSchema = new mongoose.Schema({
+  // UUID 필드 (자동으로 생성)
+  userUUID: { type: String, default: uuidv4, unique: true },
+
   // Firebase Auth에서 발급한 UID
   userUID: { type: String, required: true, unique: true },
 

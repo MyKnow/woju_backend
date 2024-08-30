@@ -91,7 +91,7 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
 exports.checkUserIDAvailable = async (req, res) => {
   const { userUID, userID } = req.body;
 
-  console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  console.log("/api/user/check-userid-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
 
   // checkUserIDAvailableFunction 함수 실행
@@ -256,7 +256,7 @@ exports.loginUser = async (req, res) => {
       // 마지막 로그인 시간과 장치 ID 업데이트
       await SignupUser.updateOne({ userID: user.userID }, { lastLoginAt: Date.now(), userDeviceID: userDeviceID });
 
-      return res.status(200).json({ userInfo : {userProfileImage: user.userProfileImage, userID: user.userID, userPhoneNumber: user.userPhoneNumber, dialCode: user.dialCode, isoCode: user.isoCode, userUID: user.userUID, userNickName: user.userNickName, userGender: user.userGender, userBirthDate: user.userBirthDate}, });
+      return res.status(200).json({ userInfo : {userUUID: user.userUUID, userProfileImage: user.userProfileImage, userID: user.userID, userPhoneNumber: user.userPhoneNumber, dialCode: user.dialCode, isoCode: user.isoCode, userUID: user.userUID, userNickName: user.userNickName, userGender: user.userGender, userBirthDate: user.userBirthDate}, });
     } else {
       console.log('비밀번호 불일치');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
