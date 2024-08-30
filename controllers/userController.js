@@ -6,6 +6,8 @@ const TempUserID = require('../models/tempUserIDModel');        // 임시로 아
 const SignupUser = require('../models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
 const { hashPassword, comparePassword } = require('../utils/crypto');        // 비밀번호 해시화 함수 불러오기
 const { FailureReason } = require('../models/responseModel');        // 응답 실패 이유 불러오기
+const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리 불러오기
+
 
 /// 사용자 전화번호 중복 확인 및 저장 로직 호출 엔드포인트
 exports.checkPhoneNumberAvailable = async (req, res) => {
@@ -173,6 +175,7 @@ exports.signupUser = async (req, res) => {
       const hashedPassword = await hashPassword(userPassword);
       // 사용자 정보 저장
       await SignupUser.create({
+        userUUID: uuidv4(),
         userDeviceID: userDeviceID,
         userUID: userUID,
         userPhoneNumber: userPhoneNumber,
