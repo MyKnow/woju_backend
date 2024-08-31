@@ -466,75 +466,6 @@ describe('withdrawUser', () => {
   });
 });
 
-describe('update-user-id', () => {
-  it('등록된 사용자 정보로 정보 수정 요청을 보낸 경우, 정보 수정이 정상적으로 처리되어야 한다.', async () => {
-    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
-
-    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
-
-    expect(response.status).toBe(200);
-
-    const user = await SignupUser.findOne({ userID: 'newTest' });
-
-    expect(user).not.toBeNull();
-  });
-
-  it ('등록되지 않은 사용자 정보로 정보 수정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
-    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
-
-    expect(response.status).toBe(400);
-
-    const user = await SignupUser.findOne({ userID: 'newTest' });
-
-    expect(user).toBeNull();
-  });
-
-  it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
-    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
-
-    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'wrongPassword' });
-
-    expect(response.status).toBe(400);
-
-    const user = await SignupUser.findOne({ userID: 'newTest' });
-
-    expect(user).toBeNull();
-  });
-
-  it('새로운 시도하는 아이디가 TempUserIDModel이나 SignUpUser에 이미 존재하는 경우, 에러 응답을 반환해야 한다.', async () => {
-    // 시도하는 개체
-    await await request(app)
-      .post('/api/user/signup')
-      .send({ userUID:'testUID2', userDeviceID: 'testDeviceID2', userPhoneNumber: '91234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
-
-    // 이미 존재하는 개체
-    await TempUserID.create({ userUID: 'testUID', userID: 'newTest' });
-    await await request(app)
-    .post('/api/user/signup')
-    .send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'newTest', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
-    
-    // 시도하는 개체가 이미 존재하는 개체의 ID로 변경을 시도하는 경우
-    const response = await request(app).post('/api/user/update-user-id').send({ oldUserID: 'test', newUserID: 'newTest', userUID: 'testUID', userPassword: 'test' });
-
-    // 에러 반환
-    expect(response.status).toBe(400);
-    console.log("response body: ", response.body);
-    expect(response.body.failureReason).toBe(FailureReason.USER_ID_NOT_AVAILABLE);
-
-    // 기존 개체의 UID가 변경되지 않았는지 확인
-    const user = await SignupUser.findOne({ userID: 'newTest' });
-
-    expect(user).not.toBeNull();
-    expect(user.userUID).toBe('testUID');
-
-    // 시도한 개체의 ID가 변경되지 않았는지 확인
-    const oldUser = await SignupUser.findOne({ userUID: 'testUID2' });
-
-    expect(oldUser).not.toBeNull();
-    expect(oldUser.userID).toBe('test');
-  });
-});
-
 describe('update-user-password', () => {
   it('등록된 사용자 정보로 비밀번호 수정 요청을 보낸 경우, 비밀번호 수정이 정상적으로 처리되어야 한다.', async () => {
     await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
@@ -567,8 +498,11 @@ describe('update-user-info', () => {
   it('등록된 사용자 정보로 정보 수정 요청을 보낸 경우, 정보 수정이 정상적으로 처리되어야 한다.', async () => {
     await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
 
+    const userBeforeUpdate = await SignupUser.findOne({ userID: 'test' });
+
+
     // 요청에선 항상 userModel의 모든 필드를 전달해야 한다.
-    const response = await request(app).post('/api/user/update-user-info').send({userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: 'myknow', userGender: 'man', userBirthDate: '2000-01-01' });
+    const response = await request(app).post('/api/user/update-user-info').send({userUUID: userBeforeUpdate.userUUID, userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: 'myknow', userGender: 'man', userBirthDate: '2000-01-01' });
 
     expect(response.status).toBe(200);
     expect(response.body.failureReason).toBeUndefined();
@@ -589,10 +523,11 @@ describe('update-user-info', () => {
 
   it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
     const response = await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
-
     expect(response.status).toBe(200);
 
-    const result = await request(app).post('/api/user/update-user-info').send({  userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber : '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'testAnotherPassword', userProfileImage: null, userNickName: 'myknow', userGender: 'private', userBirthDate: '2000-01-01' });
+    const userBeforeUpdate = await SignupUser.findOne({ userID: 'test' });
+
+    const result = await request(app).post('/api/user/update-user-info').send({ userUUID:userBeforeUpdate.userUUID,  userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber : '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'testAnotherPassword', userProfileImage: null, userNickName: 'myknow', userGender: 'private', userBirthDate: '2000-01-01' });
 
     expect(result.status).toBe(400);
     expect(result.body.failureReason).toBe(FailureReason.PASSWORD_NOT_MATCH);

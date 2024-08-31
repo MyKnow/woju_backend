@@ -312,56 +312,6 @@ exports.withdrawUser = async (req, res) => {
   }
 }
 
-/// 사용자 ID 수정 엔드포인트
-exports.updateUserID = async (req, res) => {
-  const { oldUserID, newUserID, userPassword } = req.body;
-
-  console.log("/api/user/update 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
-
-  try {
-    const user = await SignupUser.findOne({ userID : oldUserID });
-
-    if (!user) {
-      console.log('사용자 정보 없음');
-      return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
-    }
-
-    // newUserID가 이미 존재하는지 확인
-    const userCheck = await checkUserIDAvailableFunction(user.userUID, newUserID);
-
-    // newUserID가 사용 중인 경우, 사용 불가능하다고 응답
-    if (!userCheck.isAvailable) {
-      console.log('아이디 사용 불가');
-      return res.status(400).json({ failureReason: FailureReason.USER_ID_NOT_AVAILABLE, message: '해당 아이디는 이미 사용 중입니다.' });
-    }
-
-    // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
-    if (!userPassword || userPassword.trim() === '') {
-      console.log('비밀번호가 없음');
-      return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
-    }
-
-    // 비밀번호 비교
-    console.log('비밀번호 비교 시작');
-
-    const match = await comparePassword(userPassword, user.userPassword);
-
-    // 비밀번호가 일치하는 경우, 아이디 수정
-    if (match) {
-      console.log('아이디 수정 시작');
-      await SignupUser.updateOne({ userID: oldUserID }, { userID: newUserID });
-      return res.status(200).json({ isSuccess: true });
-    } else {
-      console.log('비밀번호 불일치');
-      return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
-    }
-  } catch (error) {
-    // 예외 발생 시, 서버 오류로 응답하고 콘솔에 오류 로그 출력
-    console.error('아이디 수정 중 오류 발생:', error);
-    return res.status(500).json({ failureReason: FailureReason.SERVER_ERROR, message: '서버 오류' });
-  }
-}
-
 /// 사용자 비밀번호 수정 엔드포인트
 exports.updateUserPassword = async (req, res) => {
   const { userID, oldPassword, newPassword } = req.body;
@@ -462,12 +412,12 @@ exports.checkUserExists = async (req, res) => {
 
 /// 사용자 정보 업데이트 엔드포인트
 exports.updateUserInfo = async (req, res) => {
-  const { userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword } = req.body;
+  const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword } = req.body;
 
   console.log("/api/user/update-user-info 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
-    const user = await SignupUser.findOne({ userID: userID });
+    const user = await SignupUser.findOne({ userUUID: userUUID });
 
     if (!user) {
       console.log('사용자 정보 없음');
@@ -509,7 +459,7 @@ exports.updateUserInfo = async (req, res) => {
       }
 
       // 사용자 정보 업데이트
-      await SignupUser.updateOne({ userID: userID }, { userProfileImage: userProfileImage, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode, userNickName: userNickName, userGender: userGender, userBirthDate: userBirthDate });
+      await SignupUser.updateOne({ userUUID: userUUID }, { userID: userID, userProfileImage: userProfileImage, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode, userNickName: userNickName, userGender: userGender, userBirthDate: userBirthDate });
 
       return res.status(200).json({ isSuccess: true });
     }
