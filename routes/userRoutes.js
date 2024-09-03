@@ -30,4 +30,7 @@ router.post('/check-user-exists', userController.checkUserExists);
 // 사용자 정보 수정 API 엔드포인트
 router.post('/update-user-info', userController.updateUserInfo);
 
+/// 사용자 전화번호 수정 API 엔드포인트
+router.post('/update-user-phonenumber', userController.updateUserPhoneNumber);
+
 module.exports = router;

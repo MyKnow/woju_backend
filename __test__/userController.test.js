@@ -539,3 +539,40 @@ describe('update-user-info', () => {
     expect(user.userNickName).toBe('');
   });
 });
+
+describe('update-user-phonenumber', () => {
+  it('등록된 사용자 정보로 전화번호 수정 요청을 보낸 경우, 전화번호 수정이 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    const userBeforeUpdate = await SignupUser.findOne({ userID: 'test' });
+
+    const response = await request(app).post('/api/user/update-user-phonenumber').send({ userUUID: userBeforeUpdate.userUUID, userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '0987654321', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test' });
+
+    expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: 'test' });
+
+    expect(user).not.toBeNull();
+    expect(user.userPhoneNumber).toBe('0987654321');
+  });
+
+  it('등록되지 않은 사용자 정보로 전화번호 수정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/update-user-phonenumber').send({ userID: 'test', userPassword: 'test', userPhoneNumber: '0987654321' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.failureReason).toBe(FailureReason.USER_NOT_FOUND);
+  });
+
+  it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/signup').send({ userUID:'testUID', userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR', userID: 'test', userPassword : 'test', userProfileImage: null, userNickName: '', userGender: 'private', userBirthDate: '2000-01-01' });
+
+    expect(response.status).toBe(200);
+
+    const userBeforeUpdate = await SignupUser.findOne({ userID: 'test' });
+
+    const result = await request(app).post('/api/user/update-user-phonenumber').send({ userUUID: userBeforeUpdate.userUUID, userUID:'testUID', userPhoneNumber: '0987654321', dialCode: '+82', isoCode: 'KR', userPassword : 'testAnotherPassword' });
+
+    expect(result.status).toBe(400);
+    expect(result.body.failureReason).toBe(FailureReason.PASSWORD_NOT_MATCH);
+  });
+});
