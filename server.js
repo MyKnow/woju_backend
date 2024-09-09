@@ -25,5 +25,5 @@ app.use('/api/service', serviceRoutes); // "/api/service" 경로로 시작하는
 // 서버 실행
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  // console.log(`Server is running on port ${PORT}`);
 });

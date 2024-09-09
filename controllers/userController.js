@@ -3,18 +3,17 @@
 // 필요한 모델 불러오기
 const TempPhoneNumber = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 const TempUserID = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
-const SignupUser = require('../models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
+const { SignupUser } = require('../models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
 const { hashPassword, comparePassword } = require('../utils/crypto');        // 비밀번호 해시화 함수 불러오기
 const { FailureReason } = require('../models/responseModel');        // 응답 실패 이유 불러오기
 const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리 불러오기
-const { Sign } = require('crypto');
 
 
 /// 사용자 전화번호 중복 확인 및 저장 로직 호출 엔드포인트
 exports.checkPhoneNumberAvailable = async (req, res) => {
   const { userDeviceID, userPhoneNumber, dialCode, isoCode } = req.body;  // 요청 본문에서 userDeviceID와 전화번호를 가져옴
 
-  console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/check-phonenumber-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
 
   // checkPhoneNumberAvailableFunction 함수 실행
@@ -39,19 +38,19 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
   try {
     // 전화번호 유효성 검사
     if (!userPhoneNumber || userPhoneNumber.trim() === '') {
-      console.log('전화번호가 없음');
+      // console.log('전화번호가 없음');
       return { isAvailable: false, message: '전화번호를 입력해주세요.' };
     }
 
     // userDeviceID 유효성 검사
     if (!userDeviceID || userDeviceID.trim() === '') {
-      console.log('userDeviceID가 없음');
+      // console.log('userDeviceID가 없음');
       return {isAvailable: false, message: '사용자 정보가 없습니다.'};
     }
 
     // dialCode 유효성 검사
     if (!dialCode || dialCode.trim() === '') {
-      console.log('dialCode가 없음');
+      // console.log('dialCode가 없음');
       return {isAvailable: false, message: '국가 코드를 입력해주세요.'};
     }
 
@@ -63,7 +62,7 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
 
     // 각 저장소에 동일한 전화번호가 존재하지 않는 경우, 사용 가능한 전화번호로 판단하여 임시 저장소에 저장
     if (!tempPhoneNumber && !user) {
-      console.log('전화번호 사용 가능 : (최초 등록)');
+      // console.log('전화번호 사용 가능 : (최초 등록)');
       // 임시 저장소에 사용자 정보 저장 (10분 후 자동 삭제)
       await TempPhoneNumber.create({ userDeviceID: userDeviceID, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode : isoCode });
       // 응답
@@ -71,16 +70,16 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
     }
     // 각 저장소에 동일한 전화번호가 있고, 그 전화번호가 현재 요청한 사용자의 userDeviceID와 같은 경우, 사용 가능한 전화번호로 판단
     else if ((tempPhoneNumber && tempPhoneNumber.userDeviceID === userDeviceID)) {
-      console.log('전화번호 사용 가능 : (이미 가등록된 전화번호)');
+      // console.log('전화번호 사용 가능 : (이미 가등록된 전화번호)');
       return { isAvailable: true, isAlreadyRegistered: false, message: '해당 전화번호는 사용 가능합니다.' };
     }
     else if ((user && user.userDeviceID === userDeviceID)) {
-      console.log('전화번호 사용 가능 : (이미 등록된 전화번호)');
+      // console.log('전화번호 사용 가능 : (이미 등록된 전화번호)');
       return { isAvailable: true, isAlreadyRegistered: true, message: '해당 전화번호는 사용 가능합니다.' };
     }
     // 각 저장소에 동일한 전화번호가 있고, 그 전화번호가 현재 요청한 사용자의 userDeviceID와 다른 경우, 사용 불가능한 전화번호로 판단
     else {
-      console.log('전화번호 사용 불가');
+      // console.log('전화번호 사용 불가');
       return { isAvailable: false, isAlreadyRegistered: true, message: '해당 전화번호는 이미 사용 중입니다.' };
     }
   } catch (error) {
@@ -94,7 +93,7 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
 exports.checkUserIDAvailable = async (req, res) => {
   const { userUID, userID } = req.body;
 
-  console.log("/api/user/check-userid-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/check-userid-available 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
 
   // checkUserIDAvailableFunction 함수 실행
@@ -116,13 +115,13 @@ async function checkUserIDAvailableFunction(userUID, userID) {
   try {
     // 아이디 유효성 검사
     if (!userID || userID.trim() === '') {
-      console.log('아이디가 없음');
+      // console.log('아이디가 없음');
       return { isAvailable: false, message: '아이디를 입력해주세요.' };
     }
 
     // userUID 유효성 검사
     if (!userUID || userUID.trim() === '') {
-      console.log('userUID가 없음');
+      // console.log('userUID가 없음');
       return {isAvailable: false, message: '사용자 정보가 없습니다.'};
     }
 
@@ -134,7 +133,7 @@ async function checkUserIDAvailableFunction(userUID, userID) {
 
     // 각 저장소에 동일한 아이디가 존재하지 않는 경우, 사용 가능한 아이디으로 판단하여 임시 저장소에 저장
     if (!tempUserID && !user) {
-      console.log('아이디 사용 가능 : (최초 등록)');
+      // console.log('아이디 사용 가능 : (최초 등록)');
       // 임시 저장소에 사용자 정보 저장 (10분 후 자동 삭제)
       await TempUserID.create({ userUID: userUID, userID: userID });
       // 응답
@@ -142,15 +141,15 @@ async function checkUserIDAvailableFunction(userUID, userID) {
     }
     // 각 저장소에 동일한 아이디가 있고, 그 아이디가 현재 요청한 사용자의 UID와 같은 경우, 사용 가능한 아이디으로 판단
     else if ((tempUserID && tempUserID.userUID === userUID)) {
-      console.log('아이디 사용 가능 : (이미 가등록된 아이디)');
+      // console.log('아이디 사용 가능 : (이미 가등록된 아이디)');
       return { isAvailable: true,isAlreadyRegistered: false,  message: '해당 아이디은 사용 가능합니다.' };
     } else if ((user && user.userUID === userUID)) {
-      console.log('아이디 사용 가능 : (이미 등록된 아이디)');
+      // console.log('아이디 사용 가능 : (이미 등록된 아이디)');
       return { isAvailable: true,isAlreadyRegistered: true,  message: '해당 아이디은 사용 가능합니다.' };
     }
     // 각 저장소에 동일한 아이디가 있고, 그 아이디가 현재 요청한 사용자의 UID와 다른 경우, 사용 불가능한 아이디으로 판단
     else {
-      console.log('아이디 사용 불가');
+      // console.log('아이디 사용 불가');
       return { isAvailable: false, isAlreadyRegistered: true, message: '해당 아이디은 이미 사용 중입니다.' };
     }
   } catch (error) {
@@ -162,14 +161,21 @@ async function checkUserIDAvailableFunction(userUID, userID) {
 
 /// 회원가입 엔드포인트
 exports.signupUser = async (req, res) => {
-  const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate } = req.body;
+  const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate, termsVersion, privacyVersion } = req.body;
 
-  console.log("/api/user/signup 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/signup 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     // checkPhoneNumberAvailable과 checkUserIDAvailable를 이용해서 전화번호와 아이디 중복 여부를 재확인
     const phoneCheck = await checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, dialCode, isoCode);
     const idCheck = await checkUserIDAvailableFunction(userUID, userID);
+
+    // 필수 정보 누락 시, 사용자 정보가 없다고 응답
+    // userDeviceID, userUID, userPassword, userNickName, termsVersion, privacyVersion
+    if (!userDeviceID || userDeviceID.trim() === '' || !userUID || userUID.trim() === '' || !userPassword || userPassword.trim() === '' || !userNickName || userNickName.trim() === '' || !termsVersion || termsVersion.trim() === '' || !privacyVersion || privacyVersion.trim() === '') {
+      // console.log('사용자 정보 없음');
+      return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_SIGNUP_INFO_EMPTY, message: '사용자 필수 정보가 누락되었습니다.' });
+    }
 
     // checkPhoneNumberAvailable와 checkUserIDAvailable 모두 사용 가능한 경우에만 회원가입 진행
     if ((phoneCheck.isAvailable && !phoneCheck.isAlreadyRegistered)&& (idCheck.isAvailable && !idCheck.isAlreadyRegistered)) {
@@ -187,10 +193,12 @@ exports.signupUser = async (req, res) => {
         userProfileImage: userProfileImage,
         userNickName: userNickName,
         userGender: userGender,
-        userBirthDate: userBirthDate
+        userBirthDate: userBirthDate,
+        termsVersion: termsVersion,
+        privacyVersion: privacyVersion,
       });
 
-      console.log('사용자 정보 저장 완료');
+      // console.log('사용자 정보 저장 완료');
       // 임시 저장소에 저장된 사용자 정보 삭제
       await TempPhoneNumber.deleteOne({ userPhoneNumber: userPhoneNumber });
       await TempUserID.deleteOne({ userID: userID });
@@ -198,13 +206,13 @@ exports.signupUser = async (req, res) => {
       return res.status(200).json({ isSuccess: true });
     }
     else if  (!phoneCheck.isAvailable) {
-      console.log('사용자 정보 저장 실패 : 중복된 전화번호 또는 아이디');
+      // console.log('사용자 정보 저장 실패 : 중복된 전화번호 또는 아이디');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PHONENUMBER_NOT_AVAILABLE, message: '해당 전화번호는 이미 사용 중입니다.' });
     } else if (!idCheck.isAvailable) {
-      console.log('사용자 정보 저장 실패 : 중복된 아이디');
+      // console.log('사용자 정보 저장 실패 : 중복된 아이디');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_ID_NOT_AVAILABLE, message: '해당 아이디는 이미 사용 중입니다.' });
     } else {
-      console.log('사용자 정보 저장 실패 : 중복된 전화번호 또는 아이디');
+      // console.log('사용자 정보 저장 실패 : 중복된 전화번호 또는 아이디');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PHONENUMBER_NOT_AVAILABLE, message: '해당 전화번호는 이미 사용 중입니다.' });
     }
   } catch (error) {
@@ -218,18 +226,18 @@ exports.signupUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   const { userPhoneNumber, dialCode, isoCode, userID, userPassword, userDeviceID } = req.body;
 
-  console.log("/api/user/login 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/login 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     // 전화번호와 아이디가 둘 다 없는 경우, 사용자 정보가 없다고 응답
     if ((!userPhoneNumber || userPhoneNumber.trim() === '') && (!userID || userID.trim() === '')) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ failureReason: FailureReason.USER_LOGIN_INFO_EMPTY, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!userPassword || userPassword.trim() === '') {
-      console.log('비밀번호가 없음');
+      // console.log('비밀번호가 없음');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
@@ -246,23 +254,25 @@ exports.loginUser = async (req, res) => {
 
     // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호 비교
-    console.log('비밀번호 비교 시작');
+    // console.log('비밀번호 비교 시작');
     const match = await comparePassword(userPassword, user.userPassword);
 
     // 비밀번호가 일치하는 경우, 로그인 성공. 유저 정보 일부를 응답
     if (match) {
-      console.log('로그인 성공');
+      // console.log('로그인 성공');
       // 마지막 로그인 시간과 장치 ID 업데이트
       await SignupUser.updateOne({ userID: user.userID }, { lastLoginAt: Date.now(), userDeviceID: userDeviceID });
 
-      return res.status(200).json({ userInfo : {userUUID: user.userUUID, userProfileImage: user.userProfileImage, userID: user.userID, userPhoneNumber: user.userPhoneNumber, dialCode: user.dialCode, isoCode: user.isoCode, userUID: user.userUID, userNickName: user.userNickName, userGender: user.userGender, userBirthDate: user.userBirthDate}, });
+      // user에서 password 필드만 제거한 객체를 생성하여 응답
+      const { userPassword, ...userInfo } = user._doc;
+      return res.status(200).json({ userInfo });
     } else {
-      console.log('비밀번호 불일치');
+      // console.log('비밀번호 불일치');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
     }
   } catch (error) {
@@ -276,34 +286,34 @@ exports.loginUser = async (req, res) => {
 exports.withdrawUser = async (req, res) => {
   const {  userID, userPassword } = req.body;
 
-  console.log("/api/user/withdraw 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/withdraw 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userID: userID });
 
     // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!userPassword || userPassword.trim() === '') {
-      console.log('비밀번호가 없음');
+      // console.log('비밀번호가 없음');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
     // 비밀번호 비교
-    console.log('비밀번호 비교 시작');
+    // console.log('비밀번호 비교 시작');
     const match = await comparePassword(userPassword, user.userPassword);
 
     // 비밀번호가 일치하는 경우, 탈퇴 성공
     if (match) {
-      console.log('탈퇴 성공');
+      // console.log('탈퇴 성공');
       await SignupUser.deleteOne({ userID: userID });
       return res.status(200).json({ isSuccess: true });
     } else {
-      console.log('비밀번호 불일치');
+      // console.log('비밀번호 불일치');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
     }
   } catch (error) {
@@ -317,34 +327,34 @@ exports.withdrawUser = async (req, res) => {
 exports.updateUserPassword = async (req, res) => {
   const { userID, oldPassword, newPassword } = req.body;
 
-  console.log("/api/user/update-user-password 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/update-user-password 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userID: userID });
 
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!oldPassword || oldPassword.trim() === '' || !newPassword || newPassword.trim() === '') {
-      console.log('비밀번호가 없음');
+      // console.log('비밀번호가 없음');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
     // 비밀번호 비교
-    console.log('비밀번호 비교 시작');
+    // console.log('비밀번호 비교 시작');
     const match = await comparePassword(oldPassword, user.userPassword);
 
     // 비밀번호가 일치하는 경우, 비밀번호 수정
     if (match) {
-      console.log('비밀번호 수정 시작');
+      // console.log('비밀번호 수정 시작');
       const hashedPassword = await hashPassword(newPassword);
       await SignupUser.updateOne({ userID: userID }, { userPassword: hashedPassword });
       return res.status(200).json({ isSuccess: true });
     } else {
-      console.log('비밀번호 불일치');
+      // console.log('비밀번호 불일치');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
     }
   } catch (error) {
@@ -358,23 +368,23 @@ exports.updateUserPassword = async (req, res) => {
 exports.resetUserPassword = async (req, res) => {
   const {userUID, newPassword } = req.body;
 
-  console.log("/api/user/reset-user-password 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/reset-user-password 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userUID: userUID });
 
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ failureReason: FailureReason.USER_UID_EMPTY, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!newPassword || newPassword.trim() === '') {
-      console.log('비밀번호가 없음');
+      // console.log('비밀번호가 없음');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
-    console.log('비밀번호 수정 시작');
+    // console.log('비밀번호 수정 시작');
 
     const hashedPassword = await hashPassword(newPassword);
 
@@ -393,13 +403,13 @@ exports.resetUserPassword = async (req, res) => {
 exports.checkUserExists = async (req, res) => {
   const { userUID } = req.body;
 
-  console.log("/api/user/check-user-exists 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/check-user-exists 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userUID: userUID });
 
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ isExists: false });
     }
 
@@ -413,66 +423,100 @@ exports.checkUserExists = async (req, res) => {
 
 /// 사용자 정보 업데이트 엔드포인트
 exports.updateUserInfo = async (req, res) => {
-  const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword } = req.body;
+  const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword, termsVersion, privacyVersion } = req.body;
 
-  console.log("/api/user/update-user-info 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/update-user-info 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userUUID: userUUID });
 
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!userPassword || userPassword.trim() === '') {
-      console.log('비밀번호가 없음');
+      // console.log('비밀번호가 없음');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
     // 비밀번호 비교
-    console.log('비밀번호 비교 시작');
+    // console.log('비밀번호 비교 시작');
 
     const match = await comparePassword(userPassword, user.userPassword);
 
     // 비밀번호가 일치하는 경우, 사용자 정보 업데이트
 
     if (match) {
-      console.log('사용자 정보 업데이트 시작');
+      // console.log('사용자 정보 업데이트 시작');
 
       // userID 변경 시, userID 중복 확인 필요
       if (userID !== user.userID) {
         const userCheck = await checkUserIDAvailableFunction(user.userUID, userID);
         if (!userCheck.isAvailable) {
-          console.log('아이디 사용 불가');
+          // console.log('아이디 사용 불가');
           return res.status(400).json({ failureReason: FailureReason.USER_ID_NOT_AVAILABLE, message: '해당 아이디는 이미 사용 중입니다.' });
         }
       }
 
       // 전화번호 변경 시, 전화번호 중복 확인 필요
-      if (userPhoneNumber !== user.userPhoneNumber || dialCode !== user.dialCode || isoCode !== user.isoCode) {
+      if (userPhoneNumber !== user.userPhoneNumber || 
+        dialCode !== user.dialCode || 
+        isoCode !== user.isoCode) {
         const phoneCheck = await checkPhoneNumberAvailableFunction(user.userDeviceID, userPhoneNumber, dialCode, isoCode);
         if (!phoneCheck.isAvailable) {
-          console.log('전화번호 사용 불가');
+          // console.log('전화번호 사용 불가');
           return res.status(400).json({ failureReason: FailureReason.PHONENUMBER_NOT_AVAILABLE, message: '해당 전화번호는 이미 사용 중입니다.' });
         }
       }
 
-      // 사용자 정보 업데이트
-      await SignupUser.updateOne({ userUUID: userUUID }, { userID: userID, userProfileImage: userProfileImage, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode, userNickName: userNickName, userGender: userGender, userBirthDate: userBirthDate });
+      // 약관 버전 누락 또는 유효하지 않은 경우, 사용자 정보 업데이트 불가
+      if (!termsVersion || termsVersion.trim() === '' || !privacyVersion || privacyVersion.trim() === '') {
+        // console.log('약관 버전 누락');
+        return res.status(400).json({ failureReason: FailureReason.TERMS_VERSION_EMPTY, message: '약관 버전을 입력해주세요.' });
+      }
+      // 현재 버전보다 같거나 높은 것으로만 업데이트 가능
+      if (termsVersion < user.termsVersion || privacyVersion < user.privacyVersion) {
+        // console.log('약관 버전 불일치');
+        return res.status(400).json({ failureReason: FailureReason.TERMS_VERSION_NOT_MATCH, message: '약관 버전이 올바르지 않습니다.' });
+      }
 
-      return res.status(200).json({ isSuccess: true });
+      // 사용자 정보 업데이트
+      await SignupUser.updateOne(
+        { userUUID: userUUID }, 
+        { userID: userID, 
+          userProfileImage: userProfileImage, 
+          userPhoneNumber: userPhoneNumber, 
+          dialCode: dialCode, 
+          isoCode: isoCode, 
+          userNickName: userNickName, 
+          userGender: userGender, 
+          userBirthDate: userBirthDate, 
+          termsVersion: termsVersion, 
+          privacyVersion: privacyVersion 
+        }
+      );
+
+      return res.status(200).json({ 
+        isSuccess: true 
+      });
     }
     else {
-      console.log('비밀번호 불일치');
-      return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
+      // console.log('비밀번호 불일치');
+      return res.status(400).json({ 
+        failureReason: FailureReason.PASSWORD_NOT_MATCH, 
+        message: '비밀번호가 일치하지 않습니다.' 
+      });
     }
   }
   catch (error) {
     // 예외 발생 시, 서버 오류로 응답하고 콘솔에 오류 로그 출력
     console.error('사용자 정보 업데이트 중 오류 발생:', error);
-    return res.status(500).json({ failureReason: FailureReason.SERVER_ERROR, message: '서버 오류' });
+    return res.status(500).json({ 
+      failureReason: FailureReason.SERVER_ERROR, 
+      message: '서버 오류' 
+    });
   }
 }
 
@@ -480,35 +524,35 @@ exports.updateUserInfo = async (req, res) => {
 exports.updateUserPhoneNumber = async (req, res) => {
   const { userUUID, userUID, userPhoneNumber, dialCode, isoCode, userPassword } = req.body;
 
-  console.log("/api/user/update-user-phonenumber 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
+  // console.log("/api/user/update-user-phonenumber 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
 
   try {
     const user = await SignupUser.findOne({ userUUID: userUUID });
 
     if (!user) {
-      console.log('사용자 정보 없음');
+      // console.log('사용자 정보 없음');
       return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!userPassword || userPassword.trim() === '') {
-      console.log('비밀번호가 없음');
+      // console.log('비밀번호가 없음');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
     // 비밀번호 비교
-    console.log('비밀번호 비교 시작');
+    // console.log('비밀번호 비교 시작');
 
     const match = await comparePassword(userPassword, user.userPassword);
 
     // 비밀번호가 일치하는 경우, 전화번호 변경
     if (match) {
-      console.log('전화번호 변경 시작');
+      // console.log('전화번호 변경 시작');
 
       // 전화번호 중복 확인
       const phoneCheck = await checkPhoneNumberAvailableFunction(user.userDeviceID, userPhoneNumber, dialCode, isoCode);
       if (!phoneCheck.isAvailable) {
-        console.log('전화번호 사용 불가');
+        // console.log('전화번호 사용 불가');
         return res.status(400).json({ failureReason: FailureReason.PHONENUMBER_NOT_AVAILABLE, message: '해당 전화번호는 이미 사용 중입니다.' });
       }
 
@@ -518,7 +562,7 @@ exports.updateUserPhoneNumber = async (req, res) => {
       return res.status(200).json({ isSuccess: true });
     }
     else {
-      console.log('비밀번호 불일치');
+      // console.log('비밀번호 불일치');
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
     }
   } catch (error) {

@@ -33,6 +33,12 @@ const userSchema = new mongoose.Schema({
   userGender: { type: String, default: 'private' },
   userBirthDate: { type: String, default: '2000-01-01' },
 
+  // 이용 약관 버전
+  termsVersion: { type: String, required: true },
+
+  // 개인정보 처리 방침 버전
+  privacyVersion: { type: String, required: true },
+
   // 사용자 생성일, 마지막 로그인 일
   createdAt: { type: Date, default: Date.now },
   lastLoginAt: { type: Date, default: Date.now },
@@ -40,4 +46,71 @@ const userSchema = new mongoose.Schema({
 
 const SignupUser = mongoose.model('SignupUser', userSchema);
 
-module.exports = SignupUser;
+const getTestSignUpUserData = (seed) => {
+  return {
+    userUID: `testUID_${seed}`,
+    userDeviceID: `testDeviceID_${seed}`,
+    userPhoneNumber: `123456789${seed}`,
+    dialCode: `+${seed}`,
+    isoCode: `ISO_${seed}`,
+    userID: `test_${seed}`,
+    userPassword: `test_${seed}`,
+    userProfileImage: null,
+    userNickName: `test_nick${seed}`,
+    userGender: 'private',
+    userBirthDate: '2000-01-01',
+    termsVersion: '1.0.0',
+    privacyVersion: '1.0.0',
+  };
+};
+
+const getTestSignInUserData = (seed) => {
+  return {
+    userPhoneNumber: `123456789${seed}`,
+    dialCode: `+${seed}`,
+    isoCode: `ISO_${seed}`,
+    userID: `test_${seed}`,
+    userPassword: `test_${seed}`,
+  };
+};
+
+const getTestUpdateUserData = (seed, UUID) => {
+  return {
+    userUUID: UUID,
+    userUID: `testUID_${seed}`,
+    userDeviceID: `testDeviceID_${seed}`,
+    userPhoneNumber: `123456789${seed+1}`,
+    dialCode: `+${seed}`,
+    isoCode: `ISO_${seed}`,
+    userID: `test_${seed+1}`,
+    userPassword: `test_${seed}`,
+    userProfileImage: null,
+    userNickName: `test_nick${seed+1}`,
+    userGender: 'private',
+    userBirthDate: '2000-01-01',
+    termsVersion: '1.0.0',
+    privacyVersion: '1.0.0',
+  };
+};
+
+const getTestPhoneNumberUpdateData = (seed, UUID) => {
+  return {
+    userUUID: UUID,
+    userUID: `testUID_${seed}`,
+    userDeviceID: `testDeviceID_${seed}`,
+    userPhoneNumber: `123456789${seed+1}`,
+    dialCode: `+${seed}`,
+    isoCode: `ISO_${seed}`,
+    userID: `test_${seed}`,
+    userPassword : `test_${seed}`,
+  };
+}
+
+
+module.exports = {
+  SignupUser,
+  getTestSignUpUserData,
+  getTestSignInUserData,
+  getTestUpdateUserData,
+  getTestPhoneNumberUpdateData,
+};
