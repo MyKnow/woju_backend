@@ -3,7 +3,13 @@
 // 필요한 모델 불러오기
 const mongoose = require('mongoose');
 
-// 서버 연결 상태 확인
+/** DB 연결 상태 확인 API
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * 
+ * @returns {object} 200 - databaseStatus: DB 연결 상태
+ */
 exports.status = (req, res) => {
   // DB 연결 상태 확인
   const mongooseState = mongoose.connection.readyState;

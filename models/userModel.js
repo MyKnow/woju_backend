@@ -1,111 +1,68 @@
 const mongoose = require('mongoose');
 
+// 상수로 고정된 기본값 정의
+const DEFAULT_GENDER = 'private';
+const DEFAULT_BIRTH_DATE = '2000-01-01';
+const DEFAULT_TERMS_VERSION = '1.0.0';
+const DEFAULT_PRIVACY_VERSION = '1.0.0';
+
+// userSchema 정의 최적화
 const userSchema = new mongoose.Schema({
-  // UUID 필드 (자동으로 생성)
-  userUUID: { type: String, required: true, unique: true },
-
-  // Firebase Auth에서 발급한 UID
-  userUID: { type: String, required: true, unique: true },
-
-  // 사용자 기기 식별자
-  userDeviceID: { type: String, required: true },
-
-  // 사용자 전화번호
-  userPhoneNumber: { type: String, required: true, unique: true },
-
-  // 국가 코드
-  dialCode: { type: String, required: true },
-
-  // iso 국가 코드
-  isoCode: { type: String, required: true },
-
-  // 사용자 아이디
-  userID: { type: String, required: true, unique: true },
-
-  // 사용자 비밀번호 (암호화하여 저장)
-  userPassword: { type: String, required: true },
-
-  // 사용자 프로필 이미지
-  userProfileImage: { type: Buffer, default: null },
-
-  // 사용자 닉네임, 성별, 생년월일
-  userNickName: { type: String, default: null },
-  userGender: { type: String, default: 'private' },
-  userBirthDate: { type: String, default: '2000-01-01' },
-
-  // 이용 약관 버전
-  termsVersion: { type: String, required: true },
-
-  // 개인정보 처리 방침 버전
-  privacyVersion: { type: String, required: true },
-
-  // 사용자 생성일, 마지막 로그인 일
-  createdAt: { type: Date, default: Date.now },
-  lastLoginAt: { type: Date, default: Date.now },
+  userUUID: { type: String, required: true, unique: true },   // UUID 필드
+  userUID: { type: String, required: true, unique: true },    // Firebase Auth UID
+  userDeviceID: { type: String, required: true },             // 사용자 기기 식별자
+  userPhoneNumber: { type: String, required: true, unique: true }, // 전화번호
+  dialCode: { type: String, required: true },                 // 국가 코드
+  isoCode: { type: String, required: true },                  // ISO 국가 코드
+  userID: { type: String, required: true, unique: true },     // 사용자 아이디
+  userPassword: { type: String, required: true },             // 비밀번호 (암호화 저장)
+  userProfileImage: { type: Buffer, default: null },          // 프로필 이미지
+  userNickName: { type: String, default: null },              // 닉네임
+  userGender: { type: String, default: DEFAULT_GENDER },      // 성별
+  userBirthDate: { type: String, default: DEFAULT_BIRTH_DATE }, // 생년월일
+  termsVersion: { type: String, required: true, default: DEFAULT_TERMS_VERSION },  // 약관 버전
+  privacyVersion: { type: String, required: true, default: DEFAULT_PRIVACY_VERSION },  // 개인정보 처리 방침 버전
+  createdAt: { type: Date, default: Date.now },               // 생성일
+  lastLoginAt: { type: Date, default: Date.now },             // 마지막 로그인 일
 });
 
 const SignupUser = mongoose.model('SignupUser', userSchema);
 
-const getTestSignUpUserData = (seed) => {
-  return {
-    userUID: `testUID_${seed}`,
-    userDeviceID: `testDeviceID_${seed}`,
-    userPhoneNumber: `123456789${seed}`,
-    dialCode: `+${seed}`,
-    isoCode: `ISO_${seed}`,
-    userID: `test_${seed}`,
-    userPassword: `test_${seed}`,
-    userProfileImage: null,
-    userNickName: `test_nick${seed}`,
-    userGender: 'private',
-    userBirthDate: '2000-01-01',
-    termsVersion: '1.0.0',
-    privacyVersion: '1.0.0',
-  };
-};
+// 공통 데이터 생성 로직을 사용하는 함수
+const generateUserData = (seed, UUID = null, phoneNumberOffset = 0) => ({
+  userUUID: UUID || `UUID_${seed}`,
+  userUID: `testUID_${seed}`,
+  userDeviceID: `testDeviceID_${seed}`,
+  userPhoneNumber: `123456789${seed + phoneNumberOffset}`,
+  dialCode: `+${seed}`,
+  isoCode: `ISO_${seed}`,
+  userID: `test_${seed + phoneNumberOffset}`,
+  userPassword: `test_${seed}`,
+  userProfileImage: null,
+  userNickName: `test_nick${seed + phoneNumberOffset}`,
+  userGender: DEFAULT_GENDER,
+  userBirthDate: DEFAULT_BIRTH_DATE,
+  termsVersion: DEFAULT_TERMS_VERSION,
+  privacyVersion: DEFAULT_PRIVACY_VERSION,
+});
 
-const getTestSignInUserData = (seed) => {
-  return {
-    userPhoneNumber: `123456789${seed}`,
-    dialCode: `+${seed}`,
-    isoCode: `ISO_${seed}`,
-    userID: `test_${seed}`,
-    userPassword: `test_${seed}`,
-  };
-};
+// 각 테스트 데이터 생성 함수
+const getTestSignUpUserData = (seed) => generateUserData(seed);
 
-const getTestUpdateUserData = (seed, UUID) => {
-  return {
-    userUUID: UUID,
-    userUID: `testUID_${seed}`,
-    userDeviceID: `testDeviceID_${seed}`,
-    userPhoneNumber: `123456789${seed+1}`,
-    dialCode: `+${seed}`,
-    isoCode: `ISO_${seed}`,
-    userID: `test_${seed+1}`,
-    userPassword: `test_${seed}`,
-    userProfileImage: null,
-    userNickName: `test_nick${seed+1}`,
-    userGender: 'private',
-    userBirthDate: '2000-01-01',
-    termsVersion: '1.0.0',
-    privacyVersion: '1.0.0',
-  };
-};
+const getTestSignInUserData = (seed) => ({
+  userPhoneNumber: `123456789${seed}`,
+  dialCode: `+${seed}`,
+  isoCode: `ISO_${seed}`,
+  userID: `test_${seed}`,
+  userPassword: `test_${seed}`,
+});
 
-const getTestPhoneNumberUpdateData = (seed, UUID) => {
-  return {
-    userUUID: UUID,
-    userUID: `testUID_${seed}`,
-    userDeviceID: `testDeviceID_${seed}`,
-    userPhoneNumber: `123456789${seed+1}`,
-    dialCode: `+${seed}`,
-    isoCode: `ISO_${seed}`,
-    userID: `test_${seed}`,
-    userPassword : `test_${seed}`,
-  };
-}
+const getTestUpdateUserData = (seed, UUID) => generateUserData(seed, UUID, 1);
 
+const getTestPhoneNumberUpdateData = (seed, UUID) => ({
+  ...generateUserData(seed, UUID, 1),
+  userPassword: `test_${seed}`,
+});
 
 module.exports = {
   SignupUser,

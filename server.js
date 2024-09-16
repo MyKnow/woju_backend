@@ -4,6 +4,7 @@ const express = require('express');
 const { connectDB } = require('./utils/db'); // DB 연결 로직
 const userRoutes = require('./routes/userRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const policyRoutes = require('./routes/policyRoutes');
 const cors = require('cors');
 const morgan = require('morgan');
 
@@ -21,6 +22,7 @@ connectDB();
 // 라우터 설정
 app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청은 userRoutes 라우터로 전달됩니다.
 app.use('/api/service', serviceRoutes); // "/api/service" 경로로 시작하는 요청은 serviceRoutes 라우터로 전달됩니다.
+app.use('/api/policy', policyRoutes); // "/api/policy" 경로로 시작하는 요청은 policyRoutes 라우터로 전달됩니다.
 
 // 서버 실행
 const PORT = 3000;

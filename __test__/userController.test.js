@@ -383,6 +383,7 @@ describe('loginUser', () => {
     const response = await request(app).post('/api/user/login').send(signInData);
 
     expect(response.status).toBe(200);
+    expect(response.body.failureReason).toBeUndefined();
   });
 });
 
@@ -587,20 +588,22 @@ describe('update-user-info', () => {
 
 describe('update-user-phonenumber', () => {
   it('등록된 사용자 정보로 전화번호 수정 요청을 보낸 경우, 전화번호 수정이 정상적으로 처리되어야 한다.', async () => {
-    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+    const signUpResult = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+    expect(signUpResult.status).toBe(200);
 
     const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
+    expect(userBeforeUpdate).not.toBeNull();
 
     const updateData = getTestPhoneNumberUpdateData(1, userBeforeUpdate.userUUID);
+    expect(updateData.userUUID).toBe(userBeforeUpdate.userUUID);
 
     const response = await request(app)
     .post('/api/user/update-user-phonenumber')
     .send(updateData);
-
+    expect(response.status).toBe(200);
     expect(response.body.failureReason).toBeUndefined();
 
-    const user = await SignupUser.findOne({ userID: updateData.userID });
-
+    const user = await SignupUser.findOne({ userUUID: userBeforeUpdate.userUUID });
     expect(user).not.toBeNull();
     expect(user.userPhoneNumber).toBe(updateData.userPhoneNumber);
   });

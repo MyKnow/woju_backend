@@ -1,15 +1,29 @@
 // controllers/userController.js
 
+const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리 불러오기
+
 // 필요한 모델 불러오기
 const TempPhoneNumber = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 const TempUserID = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
 const { SignupUser } = require('../models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
 const { hashPassword, comparePassword } = require('../utils/crypto');        // 비밀번호 해시화 함수 불러오기
 const { FailureReason } = require('../models/responseModel');        // 응답 실패 이유 불러오기
-const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리 불러오기
 
 
-/// 사용자 전화번호 중복 확인 및 저장 로직 호출 엔드포인트
+/** # 전화번호 중복 확인 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userDeviceID - 사용자 기기 ID
+ * @param {string} req.body.userPhoneNumber - 사용자 전화번호
+ * @param {string} req.body.dialCode - 국가 전화번호 코드
+ * @param {string} req.body.isoCode - 국가 코드
+ * 
+ * ## Returns
+ * @returns {object} 200 - isAvailable: 사용 가능 여부, isAlreadyRegistered: 이미 등록된 전화번호인지 여부, message: 응답 메시지
+ * @returns {Error} 400 - isAvailable: false, failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - isAvailable: false, failureReason: SERVER_ERROR
+ * 
+ */
 exports.checkPhoneNumberAvailable = async (req, res) => {
   const { userDeviceID, userPhoneNumber, dialCode, isoCode } = req.body;  // 요청 본문에서 userDeviceID와 전화번호를 가져옴
 
@@ -33,7 +47,17 @@ exports.checkPhoneNumberAvailable = async (req, res) => {
   }
 };
 
-/// 사용자 전화번호 중복 확인 및 저장 로직
+/** # 전화번호 중복 확인 및 저장 함수
+ * 
+ * ## Parameters
+ * @param {string} userDeviceID - 사용자 기기 ID
+ * @param {string} userPhoneNumber - 사용자 전화번호
+ * @param {string} dialCode - 국가 전화번호 코드
+ * @param {string} isoCode - 국가 코드
+ * 
+ * ## Returns
+ * @returns {object} isAvailable: 사용 가능 여부, isAlreadyRegistered: 이미 등록된 전화번호인지 여부, message: 응답 메시지
+ */
 async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, dialCode, isoCode ) {
   try {
     // 전화번호 유효성 검사
@@ -89,7 +113,18 @@ async function checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, 
   }
 }
 
-/// 아이디 중복 체크 엔드포인트
+/** # 아이디 중복 확인 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userUID - 사용자 UID
+ * @param {string} req.body.userID - 사용자 아이디
+ * 
+ * ## Returns
+ * @returns {object} 200 - isAvailable: 사용 가능 여부, message: 응답 메시지
+ * @returns {Error} 400 - isAvailable: false, failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - isAvailable: false, failureReason: SERVER_ERROR
+ * 
+ */
 exports.checkUserIDAvailable = async (req, res) => {
   const { userUID, userID } = req.body;
 
@@ -110,7 +145,18 @@ exports.checkUserIDAvailable = async (req, res) => {
   }
 }
 
-/// 아이디 중복 확인 및 저장 로직
+/** # 아이디 중복 확인 및 저장 함수
+ * 
+ * ## Parameters
+ * @param {string} userUID - 사용자 UID
+ * @param {string} userID - 사용자 아이디
+ * 
+ * ## Returns
+ * @returns {object} isAvailable: 사용 가능 여부
+ * @returns {object} isAlreadyRegistered: 이미 등록된 아이디인지 여부
+ * @returns {object} message: 응답 메시지
+ * 
+ */
 async function checkUserIDAvailableFunction(userUID, userID) {
   try {
     // 아이디 유효성 검사
@@ -159,7 +205,29 @@ async function checkUserIDAvailableFunction(userUID, userID) {
   }
 }
 
-/// 회원가입 엔드포인트
+/** # 사용자 회원가입 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userDeviceID - 사용자 기기 ID
+ * @param {string} req.body.userUID - 사용자 UID
+ * @param {string} req.body.userPhoneNumber - 사용자 전화번호
+ * @param {string} req.body.dialCode - 국가 전화번호 코드
+ * @param {string} req.body.isoCode - 국가 코드
+ * @param {string} req.body.userID - 사용자 아이디
+ * @param {string} req.body.userPassword - 사용자 비밀번호
+ * @param {string} req.body.userProfileImage - 사용자 프로필 이미지
+ * @param {string} req.body.userNickName - 사용자 닉네임
+ * @param {string} req.body.userGender - 사용자 성별
+ * @param {string} req.body.userBirthDate - 사용자 생년월일
+ * @param {string} req.body.termsVersion - 약관 버전
+ * @param {string} req.body.privacyVersion - 개인정보 처리방침 버전
+ * 
+ * ## Returns
+ * @returns {object} 200 - isSuccess: true
+ * @returns {Error} 400 - isSuccess: false, failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - isSuccess: false
+ * 
+ */
 exports.signupUser = async (req, res) => {
   const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate, termsVersion, privacyVersion } = req.body;
 
@@ -222,7 +290,23 @@ exports.signupUser = async (req, res) => {
   }
 }
 
-/// 로그인 엔드포인트
+/** # 사용자 로그인 API
+ * 
+ * ## Parameters
+ * 
+ * @param {string} req.body.userPhoneNumber - 사용자 전화번호
+ * @param {string} req.body.dialCode - 국가 전화번호 코드
+ * @param {string} req.body.isoCode - 국가 코드
+ * @param {string} req.body.userID - 사용자 아이디
+ * @param {string} req.body.userPassword - 사용자 비밀번호
+ * @param {string} req.body.userDeviceID - 사용자 기기 ID
+ * 
+ * ## Returns
+ * @returns {object} 200 - userInfo: 사용자 정보
+ * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - failureReason: SERVER_ERROR
+ * 
+ */
 exports.loginUser = async (req, res) => {
   const { userPhoneNumber, dialCode, isoCode, userID, userPassword, userDeviceID } = req.body;
 
@@ -282,7 +366,18 @@ exports.loginUser = async (req, res) => {
   }
 }
 
-/// 사용자 탈퇴 엔드포인트
+/** # 사용자 탈퇴 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userID - 사용자 아이디
+ * @param {string} req.body.userPassword - 사용자 비밀번호
+ * 
+ * ## Returns
+ * @returns {object} 200 - isSuccess: true
+ * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - failureReason: SERVER_ERROR
+ * 
+ */
 exports.withdrawUser = async (req, res) => {
   const {  userID, userPassword } = req.body;
 
@@ -323,7 +418,18 @@ exports.withdrawUser = async (req, res) => {
   }
 }
 
-/// 사용자 비밀번호 수정 엔드포인트
+/** # 사용자 비밀번호 수정 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userID - 사용자 아이디
+ * @param {string} req.body.oldPassword - 기존 비밀번호
+ * @param {string} req.body.newPassword - 새 비밀번호
+ * 
+ * ## Returns
+ * @returns {object} 200 - isSuccess: true
+ * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - failureReason: SERVER_ERROR
+ */
 exports.updateUserPassword = async (req, res) => {
   const { userID, oldPassword, newPassword } = req.body;
 
@@ -364,7 +470,17 @@ exports.updateUserPassword = async (req, res) => {
   }
 }
 
-/// 사용자 비밀번호 재설정 엔드포인트
+/** # 사용자 비밀번호 초기화 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userUID - 사용자 UID
+ * @param {string} req.body.newPassword - 새 비밀번호
+ * 
+ * ## Returns
+ * @returns {object} 200 - isSuccess: true
+ * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - failureReason: SERVER_ERROR
+ */
 exports.resetUserPassword = async (req, res) => {
   const {userUID, newPassword } = req.body;
 
@@ -399,7 +515,17 @@ exports.resetUserPassword = async (req, res) => {
   }
 }
 
-/// 사용자 가입 여부 조회 엔드포인트
+/** # 사용자 존재 여부 확인 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userUID - 사용자 UID
+ * 
+ * ## Returns
+ * @returns {object} 200 - isExists: true
+ * @returns {object} 400 - isExists: false
+ * @returns {Error} 500 - isExists: false
+ * 
+ */
 exports.checkUserExists = async (req, res) => {
   const { userUID } = req.body;
 
@@ -421,7 +547,28 @@ exports.checkUserExists = async (req, res) => {
   }
 }
 
-/// 사용자 정보 업데이트 엔드포인트
+/** # 사용자 정보 업데이트 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userUUID - 사용자 UUID
+ * @param {string} req.body.userProfileImage - 사용자 프로필 이미지
+ * @param {string} req.body.userID - 사용자 아이디
+ * @param {string} req.body.userPhoneNumber - 사용자 전화번호
+ * @param {string} req.body.dialCode - 국가 전화번호 코드
+ * @param {string} req.body.isoCode - 국가 코드
+ * @param {string} req.body.userNickName - 사용자 닉네임
+ * @param {string} req.body.userGender - 사용자 성별
+ * @param {string} req.body.userBirthDate - 사용자 생년월일
+ * @param {string} req.body.userPassword - 사용자 비밀번호
+ * @param {string} req.body.termsVersion - 약관 버전
+ * @param {string} req.body.privacyVersion - 개인정보 처리방침 버전
+ * 
+ * ## Returns
+ * @returns {object} 200 - isSuccess: true
+ * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - failureReason: SERVER_ERROR
+ * 
+ */
 exports.updateUserInfo = async (req, res) => {
   const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword, termsVersion, privacyVersion } = req.body;
 
@@ -520,7 +667,22 @@ exports.updateUserInfo = async (req, res) => {
   }
 }
 
-/// 사용자 전화번호 변경 엔드포인트
+/** # 사용자 전화번호 변경 API
+ * 
+ * ## Parameters
+ * @param {string} req.body.userUUID - 사용자 UUID
+ * @param {string} req.body.userUID - 사용자 UID
+ * @param {string} req.body.userPhoneNumber - 사용자 전화번호
+ * @param {string} req.body.dialCode - 국가 전화번호 코드
+ * @param {string} req.body.isoCode - 국가 코드
+ * @param {string} req.body.userPassword - 사용자 비밀번호
+ * 
+ * ## Returns
+ * @returns {object} 200 - isSuccess: true
+ * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 500 - failureReason: SERVER_ERROR
+ * 
+ */
 exports.updateUserPhoneNumber = async (req, res) => {
   const { userUUID, userUID, userPhoneNumber, dialCode, isoCode, userPassword } = req.body;
 
