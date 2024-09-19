@@ -13,7 +13,7 @@ const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
  * @param {string} req.query.country - 국가 코드 (필수)
  * @param {string} req.query.version - 약관 버전 (선택)
  * 
- * @returns {object} 200 - 약관 내용
+ * @returns {object} 200 - json : { version : string, content : string }
  * @returns {Error}  404 - 약관 내용이 존재하지 않음
  * @returns {Error}  500 - 서버 에러
  * 
@@ -25,13 +25,13 @@ exports.getPolicyContent = async (req, res) => {
     return res.status(400).json({ message: 'type, version, country는 필수입니다.' });
   }
 
-  const policyContent = await getPolicyContentFunction(type, version, country);
+  const policy = await getPolicyContentFunction(type, version, country);
 
-  if (!policyContent) {
+  if (!policy) {
     return res.status(404).json({ message: '약관 내용이 존재하지 않습니다.' });
   }
 
-  return res.status(200).json({ content: policyContent });
+  return res.status(200).json({ version: policy.version, content: policy.content });
 };
 
 /** 이용 약관 내용을 조회하는 비동기 함수
@@ -40,12 +40,11 @@ exports.getPolicyContent = async (req, res) => {
  * @param {string} country - 국가 코드
  * @param {string} version - 약관 버전 (선택)
  * 
- * @returns {string?} 약관 내용
+ * @returns {object} - Policy 객체
  * 
  */
 const getPolicyContentFunction = async (type, version, country) => {
-  const policy = await Policy.findOne({ type, version, country });
-  return policy ? policy.content : null;
+  return await Policy.findOne({ type, version, country });
 };
 
 /** DB에 새로운 이용 약관 추가 API

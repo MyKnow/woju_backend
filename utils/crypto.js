@@ -16,7 +16,7 @@ async function hashPassword(password) {
         return hashedPassword;
     } catch (error) {
         console.error('비밀번호 해시화 중 오류 발생:', error);
-        throw new Error('비밀번호 해시화 오류');
+        return null;
     }
 }
 
@@ -27,7 +27,7 @@ async function comparePassword(password, hashedPassword) {
         return match;
     } catch (error) {
         console.error('비밀번호 비교 중 오류 발생:', error);
-        throw new Error('비밀번호 비교 오류');
+        return false;
     }
 }
 

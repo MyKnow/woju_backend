@@ -24,3 +24,6 @@ logs
 
 # Environment variables
 .env
+
+# Coverage directory used by tools
+coverage
