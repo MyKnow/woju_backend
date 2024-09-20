@@ -54,8 +54,38 @@ const policySchema = new mongoose.Schema({
 
 const Policy = mongoose.model('Policy', policySchema);
 
+/** # PolicyType 유효성 검사 함수
+ * 
+ * - PolicyType 값이 유효한지 검사하는 함수
+ * 
+ * ### Parameters
+ * @param {string} type PolicyType 값
+ * 
+ * ### Returns
+ * @returns {boolean} 유효한 PolicyType 값인지 여부
+ */
+function isValidPolicyType(type) {
+  return Object.values(PolicyType).includes(type);
+}
+
+/** # CountryType 유효성 검사 함수
+ * 
+ * - CountryType 값이 유효한지 검사하는 함수
+ * 
+ * ### Parameters
+ * @param {string} country CountryType 값
+ * 
+ * ### Returns
+ * @returns {boolean} 유효한 CountryType 값인지 여부
+ */
+function isValidCountryType(country) {
+  return Object.values(CountryType).includes(country);
+}
+
 module.exports = {
   Policy,
   PolicyType,
   CountryType,
+  isValidPolicyType,
+  isValidCountryType,
 };

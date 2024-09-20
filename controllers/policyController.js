@@ -1,7 +1,7 @@
 // controllers/policyController.js
 
 // 필요한 모델 불러오기
-const { Policy, PolicyType } = require('../models/policyModel');
+const { Policy, PolicyType, isValidPolicyType, isValidCountryType } = require('../models/policyModel');
 const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
 
 
@@ -14,7 +14,9 @@ const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
  * @param {string} req.query.version - 약관 버전 (선택)
  * 
  * @returns {object} 200 - json : { version : string, content : string }
+ * @returns {Error}  400 - type, version, country 값이 모두 채워지지 않음
  * @returns {Error}  404 - 약관 내용이 존재하지 않음
+ * @returns {Error}  406 - type, country 값이 올바르지 않음
  * @returns {Error}  500 - 서버 에러
  * 
  */
@@ -23,6 +25,10 @@ exports.getPolicyContent = async (req, res) => {
 
   if (!type || !version || !country) {
     return res.status(400).json({ message: 'type, version, country는 필수입니다.' });
+  }
+
+  if (!isValidPolicyType(type) || !isValidCountryType(country)) {
+    return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
   }
 
   const policy = await getPolicyContentFunction(type, version, country);
@@ -58,6 +64,7 @@ const getPolicyContentFunction = async (type, version, country) => {
  * 
  * @returns {object} 200 - 약관 추가 성공
  * @returns {Error}  400 - 요청 바디가 올바르지 않음
+ * @returns {Error}  406 - type, country 값이 올바르지 않음
  * @returns {Error}  409 - 이미 존재하는 약관
  * @returns {Error}  500 - 서버 에러
  * 
@@ -71,6 +78,10 @@ exports.addPolicyContent = [
 
     if (!version || !content || !type || !country) {
       return res.status(400).json({ message: '요청 바디가 올바르지 않습니다.' });
+    }
+
+    if (!isValidPolicyType(type) || !isValidCountryType(country)) {
+      return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
 
     if (await Policy.findOne({ version, type, country })) {
@@ -99,6 +110,7 @@ exports.addPolicyContent = [
  * @returns {object} 200 - 약관 수정 성공
  * @returns {Error}  400 - 요청 바디가 올바르지 않음
  * @returns {Error}  404 - 약관 내용이 존재하지 않음
+ * @returns {Error}  406 - type, country 값이 올바르지 않음
  * @returns {Error}  500 - 서버 에러
  * 
  * @security JWT
@@ -111,6 +123,10 @@ exports.updatePolicyContent = [
 
     if (!version || !content || !type || !country) {
       return res.status(400).json({ message: '요청 바디가 올바르지 않습니다.' });
+    }
+
+    if (!isValidPolicyType(type) || !isValidCountryType(country)) {
+      return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
 
     const policy = await Policy.findOne({ version, type, country });
@@ -144,6 +160,7 @@ exports.updatePolicyContent = [
  * @returns {object} 200 - 약관 삭제 성공
  * @returns {Error}  400 - 요청 바디가 올바르지 않음
  * @returns {Error}  404 - 삭제할 약관이 존재하지 않음
+ * @returns {Error}  406 - type, country 값이 올바르지 않음
  * 
  * ## Security
  * @security JWT
@@ -156,6 +173,10 @@ exports.deletePolicyContent = [
 
     if (!version || !type || !country) {
       return res.status(400).json({ message: '요청 바디가 올바르지 않습니다.' });
+    }
+
+    if (!isValidPolicyType(type) || !isValidCountryType(country)) {
+      return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
 
     const result = await Policy.deleteOne({ version, type, country });

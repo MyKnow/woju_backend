@@ -28,7 +28,7 @@ afterAll(async () => {
 
 // 각 테스트 실행 전 DB 상태 초기화
 beforeEach(async () => {
-  await Policy.deleteMany({}); // 테스트 전에 DB의 모든 정책을 삭제하여 초기화
+    await Policy.deleteMany({}); // 테스트 전에 DB의 모든 정책을 삭제하여 초기화
 });
 
 describe('정책 관련 API 테스트', () => {
@@ -51,6 +51,11 @@ describe('정책 관련 API 테스트', () => {
         it('약관이 존재하지 않으면 404를 반환한다.', async () => {
             const response = await request(app).get(`/api/policy/terms?type=${PolicyType.PrivacyPolicy}&version=1.0&country=${CountryType.US}`);
             expect(response.statusCode).toBe(404);
+        });
+
+        it ('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
+            const response = await request(app).get('/api/policy/terms?type=invalid&version=1.0&country=invalid');
+            expect(response.statusCode).toBe(406);
         });
     });
   
@@ -111,6 +116,16 @@ describe('정책 관련 API 테스트', () => {
             .send({ version: '1.0', type: PolicyType.TermsOfService, content: '테스트 약관 추가', country: CountryType.KR });
     
             expect(response.statusCode).toBe(403);
+        });
+
+        it ('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
+            const adminToken = generateToken('ADMIN');
+
+            const response = await request(app).post('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0', type: 'invalid', content: '테스트 약관 추가', country: 'invalid' });
+            expect(response.statusCode).toBe(406);
+
+            const policy = await Policy.findOne({ version: '1.0', type: PolicyType.TermsOfService, country: CountryType.KR });
+            expect(policy).toBeNull();
         });
 
         it('이미 존재하는 약관을 추가하면 409를 반환한다.', async () => {
@@ -203,6 +218,16 @@ describe('정책 관련 API 테스트', () => {
     
             expect(response.statusCode).toBe(404);
         });
+
+        it('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
+            const adminToken = generateToken('ADMIN');
+
+            const response = await request(app).put('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0', type: 'invalid', content: '수정된 약관', country: 'invalid' });
+            expect(response.statusCode).toBe(406);
+
+            const policy = await Policy.findOne({ version: '1.0', type: PolicyType.TermsOfService, country: CountryType.KR });
+            expect(policy).toBeNull();
+        });
     });
   
     // DELETE 테스트
@@ -292,6 +317,16 @@ describe('정책 관련 API 테스트', () => {
             .send({ version: '1.0', type: PolicyType.TermsOfService, country: CountryType.KR });
     
             expect(response.statusCode).toBe(404);
+        });
+
+        it('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
+            const adminToken = generateToken('ADMIN');
+
+            const response = await request(app).delete('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0', type: 'invalid', country: 'invalid' });
+            expect(response.statusCode).toBe(406);
+
+            const policy = await Policy.findOne({ version: '1.0', type: PolicyType.TermsOfService, country: CountryType.KR });
+            expect(policy).toBeNull();
         });
     });
   });
