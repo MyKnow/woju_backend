@@ -23,15 +23,17 @@ const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
 exports.getPolicyContent = async (req, res) => {
   const { type, version, country } = req.query;
 
-  if (!type || !version || !country) {
-    return res.status(400).json({ message: 'type, version, country는 필수입니다.' });
+  if (!type || !country) {
+    return res.status(400).json({ message: 'type, country는 필수입니다.' });
   }
 
   if (!isValidPolicyType(type) || !isValidCountryType(country)) {
     return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
   }
 
-  const policy = await getPolicyContentFunction(type, version, country);
+  const searchVersion = version ? version : null;
+  
+  const policy = await getPolicyContentFunction(type, searchVersion, country);
 
   if (!policy) {
     return res.status(404).json({ message: '약관 내용이 존재하지 않습니다.' });
@@ -44,13 +46,17 @@ exports.getPolicyContent = async (req, res) => {
  * 
  * @param {string} type - 약관 종류
  * @param {string} country - 국가 코드
- * @param {string} version - 약관 버전 (선택)
+ * @param {string} version - 약관 버전 (선택, version 값이 없으면 최신 버전을 조회)
  * 
  * @returns {object} - Policy 객체
  * 
  */
 const getPolicyContentFunction = async (type, version, country) => {
-  return await Policy.findOne({ type, version, country });
+  if (version) {
+    return await Policy.findOne({ type, country, version });
+  } else {
+    return await Policy.findOne({ type, country }).sort({ updatedAt: -1 });
+  }
 };
 
 /** DB에 새로운 이용 약관 추가 API

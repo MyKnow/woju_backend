@@ -43,6 +43,16 @@ describe('정책 관련 API 테스트', () => {
             expect(response.body.content).toBe('테스트 약관 내용');
         });
 
+        it('버전을 명시하지 않으면 최신 버전을 가져온다.', async () => {
+            await Policy.create({ type: PolicyType.PrivacyPolicy, version: '1.0', content: '테스트 약관 내용', country: CountryType.KR });
+            await Policy.create({ type: PolicyType.PrivacyPolicy, version: '2.0', content: '테스트 약관 내용 2.0', country: CountryType.KR });
+
+            const response = await request(app).get(`/api/policy/terms?type=${PolicyType.PrivacyPolicy}&country=${CountryType.KR}`);
+
+            expect(response.statusCode).toBe(200);
+            expect(response.body.content).toBe('테스트 약관 내용 2.0');
+        });
+
         it('요청 바디가 올바르지 않으면 400을 반환한다.', async () => {
             const response = await request(app).get('/api/policy/terms');
             expect(response.statusCode).toBe(400);
