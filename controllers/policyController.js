@@ -5,14 +5,19 @@ const { Policy, PolicyType, isValidPolicyType, isValidCountryType } = require('.
 const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
 
 
-/** 이용 약관 내용 GET API
+/** # 이용 약관 내용 GET API
  * 
+ * - 약관 종류와 국가 코드에 해당하는 약관을 조회한다.
+ * 
+ * ### Route
  * @route GET /policy/terms
  * 
+ * ### Query Params
  * @param {string} req.query.type - 약관 종류 (필수)
  * @param {string} req.query.country - 국가 코드 (필수)
  * @param {string} req.query.version - 약관 버전 (선택)
  * 
+ * ### Responses
  * @returns {object} 200 - json : { version : string, content : string }
  * @returns {Error}  400 - type, version, country 값이 모두 채워지지 않음
  * @returns {Error}  404 - 약관 내용이 존재하지 않음
@@ -42,13 +47,17 @@ exports.getPolicyContent = async (req, res) => {
   return res.status(200).json({ version: policy.version, content: policy.content });
 };
 
-/** 이용 약관 내용을 조회하는 비동기 함수
+/** # 이용 약관 내용을 조회하는 비동기 함수
  * 
+ * - 약관 종류와 국가 코드에 해당하는 약관을 조회한다.
+ * 
+ * ### Parameters
  * @param {string} type - 약관 종류
  * @param {string} country - 국가 코드
  * @param {string} version - 약관 버전 (선택, version 값이 없으면 최신 버전을 조회)
  * 
- * @returns {object} - Policy 객체
+ * ### Returns
+ * @returns {object} Policy 객체
  * 
  */
 const getPolicyContentFunction = async (type, version, country) => {
@@ -59,21 +68,27 @@ const getPolicyContentFunction = async (type, version, country) => {
   }
 };
 
-/** DB에 새로운 이용 약관 추가 API
+/** # DB에 새로운 이용 약관 추가 API
  * 
+ * - 약관 버전과 종류에 해당하는 약관을 추가한다.
+ * 
+ * ### Route
  * @route POST /policy/terms
  * 
+ * ### Request Body
  * @param {string} req.body.version - 약관 버전 (필수)
  * @param {string} req.body.type - 약관 종류 (필수)
  * @param {string} req.body.country - 국가 코드 (필수)
  * @param {string} req.body.content - 약관 내용 (필수)
  * 
+ * ### Responses
  * @returns {object} 200 - 약관 추가 성공
  * @returns {Error}  400 - 요청 바디가 올바르지 않음
  * @returns {Error}  406 - type, country 값이 올바르지 않음
  * @returns {Error}  409 - 이미 존재하는 약관
  * @returns {Error}  500 - 서버 에러
  * 
+ * ### Security
  * @security JWT
  * 
 */
@@ -104,21 +119,27 @@ exports.addPolicyContent = [
   }
 ];
 
-/** DB에 있는 이용 약관 수정 API
+/** # DB에 있는 이용 약관 수정 API
  * 
+ * - 약관 버전과 종류에 해당하는 약관을 수정한다.
+ * 
+ * ### Route
  * @route PUT /policy/terms
  * 
+ * ### Request Body
  * @param {string} req.body.version - 약관 버전 (필수)
  * @param {string} req.body.content - 약관 내용 (필수)
  * @param {string} req.body.type - 약관 종류 (필수)
  * @param {string} req.body.country - 국가 코드 (필수)
  * 
+ * ### Responses
  * @returns {object} 200 - 약관 수정 성공
  * @returns {Error}  400 - 요청 바디가 올바르지 않음
  * @returns {Error}  404 - 약관 내용이 존재하지 않음
  * @returns {Error}  406 - type, country 값이 올바르지 않음
  * @returns {Error}  500 - 서버 에러
  * 
+ * ### Security
  * @security JWT
  * 
 */
@@ -154,21 +175,21 @@ exports.updatePolicyContent = [
 /** # DB에 있는 이용 약관 삭제 API
  * - 약관 버전과 종류에 해당하는 약관을 삭제한다.
  * 
- * ## Route
+ * ### Route
  * @route DELETE /policy/terms
  * 
- * ## Query Params
+ * ### Query Params
  * @param {string} req.query.version 약관 버전 (필수)
  * @param {string} req.query.type 약관 종류 (필수)
  * @param {string} req.query.country 국가 코드 (필수)
  * 
- * ## Responses
+ * ### Responses
  * @returns {object} 200 - 약관 삭제 성공
  * @returns {Error}  400 - 요청 바디가 올바르지 않음
  * @returns {Error}  404 - 삭제할 약관이 존재하지 않음
  * @returns {Error}  406 - type, country 값이 올바르지 않음
  * 
- * ## Security
+ * ### Security
  * @security JWT
  * 
  */
@@ -194,3 +215,5 @@ exports.deletePolicyContent = [
     }
   }
 ];
+
+exports.getPolicyContentFunction = getPolicyContentFunction;  // 테스트를 위해 내보내기

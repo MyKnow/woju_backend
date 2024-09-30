@@ -1,7 +1,7 @@
 // routes/policyRoutes.js
 const express = require('express');
 const router = express.Router();
-const policyController = require('../controllers/policyController');
+const policyController  = require('../controllers/policyController');
 
 // 이용 약관 내용 조회 GET API
 router.get('/terms', policyController.getPolicyContent);

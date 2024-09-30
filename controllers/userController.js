@@ -9,6 +9,8 @@ const { SignupUser } = require('../models/userModel');           // 최종적으
 const { hashPassword, comparePassword } = require('../utils/crypto');        // 비밀번호 해시화 함수 불러오기
 const { FailureReason } = require('../models/responseModel');        // 응답 실패 이유 불러오기
 
+const { getPolicyContentFunction } = require('./policyController');  // 이용 약관 내용 조회 함수 불러오기
+const { Policy, PolicyType, CountryType, isValidCountryType, isValidVersion } = require('../models/policyModel'); // 이용 약관 모델 불러오기
 
 /** # 전화번호 중복 확인 API
  * 
@@ -231,23 +233,68 @@ async function checkUserIDAvailableFunction(userUID, userID) {
 exports.signupUser = async (req, res) => {
   const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate, termsVersion, privacyVersion } = req.body;
 
-  // console.log("/api/user/signup 요청 (NODE_ENV : %s)", process.env.NODE_ENV);
-
   try {
     // checkPhoneNumberAvailable과 checkUserIDAvailable를 이용해서 전화번호와 아이디 중복 여부를 재확인
     const phoneCheck = await checkPhoneNumberAvailableFunction(userDeviceID, userPhoneNumber, dialCode, isoCode);
     const idCheck = await checkUserIDAvailableFunction(userUID, userID);
 
     // 필수 정보 누락 시, 사용자 정보가 없다고 응답
-    // userDeviceID, userUID, userPassword, userNickName, termsVersion, privacyVersion
-    if (!userDeviceID || userDeviceID.trim() === '' || !userUID || userUID.trim() === '' || !userPassword || userPassword.trim() === '' || !userNickName || userNickName.trim() === '' || !termsVersion || termsVersion.trim() === '' || !privacyVersion || privacyVersion.trim() === '') {
+    // userDeviceID, userUID, userPassword, userNickName
+    if (!userDeviceID || userDeviceID.trim() === '' || !userUID || userUID.trim() === '' || !userPassword || userPassword.trim() === '' || !userNickName || userNickName.trim() === '' ) {
       // console.log('사용자 정보 없음');
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_SIGNUP_INFO_EMPTY, message: '사용자 필수 정보가 누락되었습니다.' });
     }
 
     // checkPhoneNumberAvailable와 checkUserIDAvailable 모두 사용 가능한 경우에만 회원가입 진행
     if ((phoneCheck.isAvailable && !phoneCheck.isAlreadyRegistered)&& (idCheck.isAvailable && !idCheck.isAlreadyRegistered)) {
+      // 비밀번호 해시화
       const hashedPassword = await hashPassword(userPassword);
+
+      let termsSignUpVersion = null;
+      // termsVersion, privacyVersion이 없는 경우, 가장 최신 버전으로 설정
+      if (!termsVersion || termsVersion.trim() === '' || !isValidVersion(termsVersion)) {
+        termsContent = null;
+
+        // 국가 코드가 KR인 경우, 한국어 약관 버전 조회
+        if (isoCode === 'KR' || dialCode === '+82') {
+          // termsContent의 자료형은 Policy 객체이므로, version 필드를 termsVersion에 저장
+          termsContent = await getPolicyContentFunction(PolicyType.TermsOfService, null, CountryType.KR);
+        } else {
+          termsContent = await getPolicyContentFunction(PolicyType.TermsOfService, null, CountryType.US);
+        }
+
+        if (termsContent) {
+          termsSignUpVersion = termsContent.version;
+        } else {
+          // console.log('사용자 정보 저장 실패 : 약관 버전 조회 실패');
+          return res.status(400).json({ isSuccess: false, failureReason: FailureReason.TERMS_VERSION_NOT_AVAILABLE, message: '약관 버전을 조회할 수 없습니다.' });
+        }
+      } else {
+        termsSignUpVersion = termsVersion;
+      }
+
+      let privacySignUpVersion = null;
+      if (!privacyVersion || privacyVersion.trim() === '' || !isValidVersion(privacyVersion)) {
+        privacyContent = null;
+
+        // 국가 코드가 KR인 경우, 한국어 개인정보 처리방침 버전 조회
+        if (isoCode === 'KR' || dialCode === '+82') {
+          // privacyContent의 자료형은 Policy 객체이므로, version 필드를 privacyVersion에 저장
+          privacyContent = await getPolicyContentFunction(PolicyType.PrivacyPolicy, null, CountryType.KR);
+        } else {
+          privacyContent = await getPolicyContentFunction(PolicyType.PrivacyPolicy, null, CountryType.US);
+        }
+
+        if (privacyContent) {
+          privacySignUpVersion = privacyContent.version;
+        } else {
+          // console.log('사용자 정보 저장 실패 : 개인정보 처리방침 버전 조회 실패');
+          return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PRIVACY_VERSION_NOT_AVAILABLE, message: '개인정보 처리방침 버전을 조회할 수 없습니다.' });
+        }
+      } else {
+        privacySignUpVersion = privacyVersion;
+      }
+
       // 사용자 정보 저장
       await SignupUser.create({
         userUUID: uuidv4(),
@@ -262,8 +309,8 @@ exports.signupUser = async (req, res) => {
         userNickName: userNickName,
         userGender: userGender,
         userBirthDate: userBirthDate,
-        termsVersion: termsVersion,
-        privacyVersion: privacyVersion,
+        termsVersion: termsSignUpVersion,
+        privacyVersion: privacySignUpVersion,
       });
 
       // console.log('사용자 정보 저장 완료');

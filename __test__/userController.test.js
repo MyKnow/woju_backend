@@ -10,6 +10,8 @@ const userRoutes = require('../routes/userRoutes');
 const { comparePassword } = require('../utils/crypto');
 const { FailureReason } = require('../models/responseModel');
 
+const { Policy, PolicyType, CountryType } = require('../models/policyModel');
+
 // 테스트용 Express 앱 설정
 const app = express();
 app.use(express.json());
@@ -254,6 +256,23 @@ describe('signupUser', () => {
     expect(user.userID).toBe(getTestSignUpUserData(1).userID);
   });
 
+  it('회원가입 요청 시 termsVersion, privacyVersion이 없는 경우, 최신 버전으로 저장되어야 한다.', async () => {
+    const modifiedUserData = getTestSignUpUserData(1);
+    delete modifiedUserData.termsVersion;
+    delete modifiedUserData.privacyVersion;
+
+    Policy.create({ type: PolicyType.TermsOfService, country: CountryType.KR, version: '1.0.0', content: 'test' });
+    Policy.create({ type: PolicyType.PrivacyPolicy, country: CountryType.KR, version: '1.0.0', content: 'test' });
+
+    const response = await request(app).post('/api/user/signup').send(modifiedUserData);
+    expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: modifiedUserData.userID });
+    expect(user).not.toBeNull();
+    expect(user.termsVersion).toBe('1.0.0');
+    expect(user.privacyVersion).toBe('1.0.0');
+  });
+
   it('이미 TempPhoneNumber에 등록된 전화번호로 회원가입 요청을 보낸 경우, userDeviceID가 다르다면 사용 불가 응답을 반환해야 한다.', async () => {
     await TempPhoneNumber.create({ 
       userDeviceID: getTestSignUpUserData(1).userDeviceID, 
@@ -338,9 +357,9 @@ describe('signupUser', () => {
 describe('loginUser', () => {
   it('등록된 사용자 정보로 로그인 요청을 보낸 경우, 로그인이 정상적으로 처리되어야 한다.', async () => {
     await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+    expect(await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID })).not.toBeNull();
 
     const response = await request(app).post('/api/user/login').send(getTestSignInUserData(1));
-
     expect(response.status).toBe(200);
   });
 

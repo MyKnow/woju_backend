@@ -88,6 +88,8 @@ describe('정책 관련 API 테스트', () => {
 
         it('요청 바디가 올바르지 않으면 400을 반환한다.', async () => {
             const adminToken = generateToken('ADMIN');
+
+            console.log(adminToken);
     
             const response = await request(app)
             .post('/api/policy/terms')

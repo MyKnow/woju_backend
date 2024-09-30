@@ -34,7 +34,7 @@ const generateUserData = (seed, UUID = null, phoneNumberOffset = 0) => ({
   userUID: `testUID_${seed}`,
   userDeviceID: `testDeviceID_${seed}`,
   userPhoneNumber: `123456789${seed + phoneNumberOffset}`,
-  dialCode: `+${seed}`,
+  dialCode: `+8${seed+1}`,
   isoCode: `ISO_${seed}`,
   userID: `test_${seed + phoneNumberOffset}`,
   userPassword: `test_${seed}`,
@@ -51,7 +51,7 @@ const getTestSignUpUserData = (seed) => generateUserData(seed);
 
 const getTestSignInUserData = (seed) => ({
   userPhoneNumber: `123456789${seed}`,
-  dialCode: `+${seed}`,
+  dialCode: `+8${seed+1}`,
   isoCode: `ISO_${seed}`,
   userID: `test_${seed}`,
   userPassword: `test_${seed}`,

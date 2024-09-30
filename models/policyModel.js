@@ -30,7 +30,6 @@ const policySchema = new mongoose.Schema({
   version: {
     type: String,
     required: true,
-    unique: true,
   },
   content: {
     type: String,
@@ -82,10 +81,27 @@ function isValidCountryType(country) {
   return Object.values(CountryType).includes(country);
 }
 
+/** # Version 유효성 검사 함수
+ * 
+ * - Version 값이 유효한지 검사하는 함수
+ * - Version 값은 x.x.x 또는 x.x.x-type 형식이어야 함
+ * 
+ * ### Parameters
+ * @param {string} version Version 값
+ * 
+ * ### Returns
+ * @returns {boolean} 유효한 Version 값인지 여부
+ */
+function isValidVersion(version) {
+  const regex = /^\d+\.\d+\.\d+(-\w+)?$/;
+  return regex.test(version);
+}
+
 module.exports = {
   Policy,
   PolicyType,
   CountryType,
   isValidPolicyType,
   isValidCountryType,
+  isValidVersion,
 };
