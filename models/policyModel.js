@@ -51,6 +51,9 @@ const policySchema = new mongoose.Schema({
   }
 });
 
+// version이 동일하더라도 type과 country가 다르면 다른 문서로 취급
+policySchema.index({ version: 1, type: 1, country: 1 }, { unique: true });
+
 const Policy = mongoose.model('Policy', policySchema);
 
 /** # PolicyType 유효성 검사 함수
