@@ -105,18 +105,19 @@ exports.addPolicyContent = [
       return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
 
-    if (await Policy.findOne({ version, type, country })) {
+    // 중복 여부 확인
+    const existingPolicy = await Policy.findOne({ version, type, country });
+    if (existingPolicy) {
       return res.status(409).json({ message: '이미 존재하는 약관입니다.' });
     }
 
     try {
+      // 새로운 Policy 생성
       await Policy.create({ version, content, type, country });
+      return res.status(200).json({ message: '약관 추가 성공' });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: '서버 에러' });
+      return res.status(500).json({ message: '서버 에러', error: error.message });
     }
-
-    return res.status(200).json({ message: '약관 추가 성공' });
   }
 ];
 
