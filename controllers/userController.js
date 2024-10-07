@@ -10,9 +10,8 @@ const { hashPassword, comparePassword } = require('../utils/crypto');        // 
 const { FailureReason } = require('../models/responseModel');        // 응답 실패 이유 불러오기
 
 const { checkPhoneNumberAvailableService, checkUserIDAvailableService } = require('../services/userService');  // 전화번호 중복 확인 함수 불러오기
-const { getPolicyContentService } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
-
-const { PolicyType, CountryType, isValidVersion } = require('../models/policyModel'); // 이용 약관 모델 불러오기
+const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
+const { PolicyType, CountryType } = require('../models/policyModel'); // 이용 약관 모델 불러오기
 
 /** # 전화번호 중복 확인 API
  * 
@@ -103,16 +102,16 @@ exports.checkUserIDAvailable = async (req, res) => {
 exports.signupUser = async (req, res) => {
   const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate, termsVersion, privacyVersion } = req.body;
 
+  // 필수 정보 누락 시, 사용자 정보가 없다고 응답
+  // userDeviceID, userUID, userPassword, userNickName
+  if (!userDeviceID || userDeviceID.trim() === '' || !userUID || userUID.trim() === '' || !userPassword || userPassword.trim() === '' || !userNickName || userNickName.trim() === '' ) {
+    return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_SIGNUP_INFO_EMPTY, message: '사용자 필수 정보가 누락되었습니다.' });
+  }
+
   try {
     // checkPhoneNumberAvailable과 checkUserIDAvailable를 이용해서 전화번호와 아이디 중복 여부를 재확인
     const phoneCheck = await checkPhoneNumberAvailableService(userDeviceID, userPhoneNumber, dialCode, isoCode);
     const idCheck = await checkUserIDAvailableService(userUID, userID);
-
-    // 필수 정보 누락 시, 사용자 정보가 없다고 응답
-    // userDeviceID, userUID, userPassword, userNickName
-    if (!userDeviceID || userDeviceID.trim() === '' || !userUID || userUID.trim() === '' || !userPassword || userPassword.trim() === '' || !userNickName || userNickName.trim() === '' ) {
-      return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_SIGNUP_INFO_EMPTY, message: '사용자 필수 정보가 누락되었습니다.' });
-    }
 
     // checkPhoneNumberAvailable와 checkUserIDAvailable 모두 사용 가능한 경우에만 회원가입 진행
     if ((phoneCheck.isAvailable && !phoneCheck.isAlreadyRegistered)&& (idCheck.isAvailable && !idCheck.isAlreadyRegistered)) {
@@ -250,7 +249,6 @@ exports.loginUser = async (req, res) => {
        user = await SignupUser.findOne({ userID: userID });
     }
 
-
     // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
     if (!user) {
       return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
@@ -294,14 +292,14 @@ exports.withdrawUser = async (req, res) => {
   try {
     const user = await SignupUser.findOne({ userID: userID });
 
-    // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
-    if (!user) {
-      return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
-    }
-
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!userPassword || userPassword.trim() === '') {
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
+    }
+
+    // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
+    if (!user) {
+      return res.status(400).json({ isSuccess: false, failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호 비교
@@ -366,6 +364,7 @@ exports.updateUserPassword = async (req, res) => {
   }
 }
 
+// # TODO: 사용자 비밀번호 초기화 API 보안 강화 필요
 /** # 사용자 비밀번호 초기화 API
  * 
  * ## Parameters
@@ -383,13 +382,13 @@ exports.resetUserPassword = async (req, res) => {
   try {
     const user = await SignupUser.findOne({ userUID: userUID });
 
-    if (!user) {
-      return res.status(400).json({ failureReason: FailureReason.USER_UID_EMPTY, message: '사용자 정보가 없습니다.' });
-    }
-
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!newPassword || newPassword.trim() === '') {
-      return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
+      return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '새 비밀번호를 입력해주세요.' });
+    }
+
+    if (!user) {
+      return res.status(400).json({ failureReason: FailureReason.USER_UID_EMPTY, message: '사용자 정보가 없습니다.' });
     }
 
     const hashedPassword = await hashPassword(newPassword);
@@ -461,16 +460,15 @@ exports.updateUserInfo = async (req, res) => {
   try {
     const user = await SignupUser.findOne({ userUUID: userUUID });
 
-    if (!user) {
-      // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
-      return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
-    }
-
     if (!userPassword || userPassword.trim() === '') {
       // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
     }
 
+    if (!user) {
+      // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
+      return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
+    }
     // 비밀번호 비교
     const match = await comparePassword(userPassword, user.userPassword);
 
@@ -563,14 +561,14 @@ exports.updateUserPhoneNumber = async (req, res) => {
   try {
     const user = await SignupUser.findOne({ userUUID: userUUID });
 
-    if (!user) {
-      // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
-      return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
-    }
-
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!userPassword || userPassword.trim() === '') {
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '비밀번호를 입력해주세요.' });
+    }
+
+    if (!user) {
+      // 사용자 정보가 없는 경우, 사용자 정보가 없다고 응답
+      return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     // 비밀번호 비교
@@ -595,7 +593,7 @@ exports.updateUserPhoneNumber = async (req, res) => {
     }
   } catch (error) {
     // 예외 발생 시, 서버 오류로 응답
-    return res.status(500).json({ failureReason: FailureReason.SERVER_ERROR, message: '서버 오류' });
+    return res.status(500).json({ failureReason: FailureReason.SERVER_ERROR, message: error.message });
   }
 }
     

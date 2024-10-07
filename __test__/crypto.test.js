@@ -1,4 +1,4 @@
-// __test__/cryptoUtil.test.js
+// __test__/crypto.test.js
 
 const { hashPassword, comparePassword, encryptData, decryptData } = require('../utils/crypto');
 

@@ -1,9 +1,9 @@
 // controllers/policyController.js
 
 // 필요한 모델 불러오기
-const { Policy, PolicyType, isValidPolicyType, isValidCountryType } = require('../models/policyModel');
+const { Policy, } = require('../models/policyModel');
 const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
-const { getPolicyContentService } = require('../services/policyService');
+const { getPolicyContentService, isValidPolicyType, isValidCountryType  } = require('../services/policyService');
 
 /** # 이용 약관 내용 GET API
  * 

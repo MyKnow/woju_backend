@@ -32,6 +32,7 @@ beforeEach(async () => {
   await TempPhoneNumber.deleteMany({});
   await TempUserID.deleteMany({});
   await SignupUser.deleteMany({});
+  await Policy.deleteMany({});
 });
 
 describe('checkPhoneNumberAvailable', () => {
@@ -400,6 +401,67 @@ describe('signupUser', () => {
     expect(user.userPassword).not.toBe(getTestSignUpUserData(1).userPassword);
     expect(await comparePassword(getTestSignUpUserData(1).userPassword, user.userPassword)).toBe(true);
   });
+
+  it('DB에 약관이 존재하지 않는 경우, 회원가입 요청이 실패해야 한다.', async () => {
+    const { termsVersion, ...userData } = getTestSignUpUserData(1);
+
+
+    const response = await request(app)
+      .post('/api/user/signup')
+      .send(userData);
+
+    expect(response.status).toBe(400);
+    expect(response.body.failureReason).toBe(FailureReason.TERMS_VERSION_NOT_AVAILABLE);
+
+
+    const { privacyVersion, ...userData2 } = getTestSignUpUserData(2);
+
+    const response2 = await request(app)
+      .post('/api/user/signup')
+      .send(userData2);
+
+    expect(response2.status).toBe(400);
+    expect(response2.body.failureReason).toBe(FailureReason.PRIVACY_VERSION_NOT_AVAILABLE);
+  });
+
+  it('국가 코드가 한국이 아닌 경우, 약관 버전이 없을 때 US의 약관 버전으로 회원가입이 가능해야 한다.', async () => {
+    Policy.create({ type: PolicyType.TermsOfService, country: CountryType.US, version: '1.0.0', content: 'test' });
+    Policy.create({ type: PolicyType.PrivacyPolicy, country: CountryType.US, version: '1.0.0', content: 'test' });
+    Policy.create({ type: PolicyType.TermsOfService, country: CountryType.KR, version: '1.0.1', content: 'test' });
+    Policy.create({ type: PolicyType.PrivacyPolicy, country: CountryType.KR, version: '1.0.1', content: 'test' });
+
+    const { termsVersion, isoCode, dialCode, ...userData } = getTestSignUpUserData(1);
+
+    const userDataWithUS = {
+      ...userData,
+      isoCode: 'US',
+      dialCode: '+1',
+    };
+
+    const response = await request(app)
+      .post('/api/user/signup')
+      .send(userDataWithUS);
+
+    expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: userData.userID });
+
+    expect(user).not.toBeNull();
+    expect(user.termsVersion).toBe('1.0.0');
+    expect(user.privacyVersion).toBe('1.0.0');
+
+  });
+
+  it('필수 정보가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
+    const { userDeviceID, ...userData } = getTestSignUpUserData(1);
+
+    const response = await request(app)
+      .post('/api/user/signup')
+      .send(userData);
+
+    expect(response.status).toBe(400);
+    expect(response.body.failureReason).toBe(FailureReason.USER_SIGNUP_INFO_EMPTY);
+  });
 });
 
 describe('loginUser', () => {
@@ -422,6 +484,22 @@ describe('loginUser', () => {
 
     const {userPassword, ...signInData} = getTestSignInUserData(1);
     const response = await request(app).post('/api/user/login').send(signInData);
+  });
+
+  it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    const {userPassword, ...signInData} = getTestSignInUserData(1);
+
+    const wrongPasswordSignInData = {
+      ...signInData,
+      userPassword: getTestSignUpUserData(2).userPassword,
+    };
+
+    const response = await request(app).post('/api/user/login').send(wrongPasswordSignInData);
+
+    expect(response.status).toBe(400);
+    expect(response.body.failureReason).toBe(FailureReason.PASSWORD_NOT_MATCH);
   });
 
   it('아이디 또는 전화번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
@@ -484,6 +562,14 @@ describe('withdrawUser', () => {
 
     expect(response.status).toBe(400);
   });
+
+  it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    const response = await request(app).post('/api/user/withdraw').send({ userID: getTestSignUpUserData(1).userID, userPassword: getTestSignUpUserData(2).userPassword });
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe('update-user-password', () => {
@@ -512,6 +598,61 @@ describe('update-user-password', () => {
 
     expect(response.status).toBe(400);
   });
+
+  it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    const response = await request(app).post('/api/user/update-user-password').send({ userID: getTestSignUpUserData(1).userID, oldPassword: getTestSignUpUserData(1).userPassword });
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('reset-user-password', () => {
+  it('등록된 사용자 정보로 비밀번호 재설정 요청을 보낸 경우, 비밀번호 재설정이 정상적으로 처리되어야 한다.', async () => {
+    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    const response = await request(app).post('/api/user/reset-user-password').send({ userUID: getTestSignUpUserData(1).userUID, newPassword: getTestSignUpUserData(2).userPassword });
+
+    expect(response.status).toBe(200);
+
+    const user = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
+
+    expect(user).not.toBeNull();
+    expect(await comparePassword(getTestSignUpUserData(2).userPassword, user.userPassword)).toBe(true);
+  });
+
+  it('등록되지 않은 사용자 정보로 비밀번호 재설정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/reset-user-password').send({ userUID: getTestSignUpUserData(1).userUID, newPassword: getTestSignUpUserData(2).userPassword });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    const response = await request(app).post('/api/user/reset-user-password').send({ userUID: getTestSignUpUserData(1).userUID });
+
+    expect(response.status).toBe(400);
+  });
+});
+
+describe('checkUserExist', () => {
+  it('등록된 사용자 정보로 사용자 존재 여부 확인 요청을 보낸 경우, 사용자 정보가 존재함을 응답해야 한다.', async () => {
+    await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    const response = await request(app).post('/api/user/check-user-exists').send({ userUID: getTestSignUpUserData(1).userUID });
+
+    expect(response.status).toBe(200);
+    expect(response.body.isExists).toBe(true);
+  });
+
+  it('등록되지 않은 사용자 정보로 사용자 존재 여부 확인 요청을 보낸 경우, 사용자 정보가 존재하지 않음을 응답해야 한다.', async () => {
+    const response = await request(app).post('/api/user/check-user-exists').send({ userUID: getTestSignUpUserData(1).userUID });
+
+    expect(response.status).toBe(400);
+    expect(response.body.isExists).toBe(false);
+  });
 });
 
 describe('update-user-info', () => {
@@ -523,7 +664,7 @@ describe('update-user-info', () => {
     // 요청에선 항상 userModel의 모든 필드를 전달해야 한다.
     const response = await request(app).post('/api/user/update-user-info').send(getTestUpdateUserData(1, userBeforeUpdate.userUUID));
 
-    // expect(response.status).toBe(200);
+    expect(response.status).toBe(200);
     expect(response.body.failureReason).toBeUndefined();
 
     const user = await SignupUser.findOne({ userID:getTestUpdateUserData(1, userBeforeUpdate.userUUID).userID });
@@ -651,6 +792,98 @@ describe('update-user-info', () => {
     expect(user).not.toBeNull();
     expect(user.userNickName).toBe(userBeforeUpdate.userNickName);
   });
+
+  it('전화번호가 중복된 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+    expect(response.status).toBe(200);
+
+    const responseAnotherUser = await request(app).post('/api/user/signup').send(getTestSignUpUserData(2));
+    expect(responseAnotherUser.status).toBe(200);
+
+    const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
+
+    const phoneNumberUpdate =  {
+      userUUID: userBeforeUpdate.userUUID,
+      userUID: userBeforeUpdate.userUID,
+      userDeviceID: userBeforeUpdate.userDeviceID,
+      userPhoneNumber: getTestSignUpUserData(2).userPhoneNumber,
+      dialCode: getTestSignUpUserData(2).dialCode,
+      isoCode: getTestSignUpUserData(2).isoCode,
+      userID: userBeforeUpdate.userID,
+      userPassword: getTestSignUpUserData(1).userPassword,
+      userProfileImage: userBeforeUpdate.userProfileImage,
+      userNickName: userBeforeUpdate.userNickName,
+      userGender: userBeforeUpdate.userGender,
+      userBirthDate: userBeforeUpdate.userBirthDate,
+      termsVersion: userBeforeUpdate.termsVersion,
+      privacyVersion: userBeforeUpdate.privacyVersion,
+    };
+
+    const result = await request(app)
+    .post('/api/user/update-user-info')
+    .send(phoneNumberUpdate);
+
+    expect(result.status).toBe(400);
+    expect(result.body.failureReason).toBe(FailureReason.PHONENUMBER_NOT_AVAILABLE);
+
+    // 변경되지 않았는지 확인
+    const user = await SignupUser.findOne({ userID: phoneNumberUpdate.userID });
+
+    expect(user).not.toBeNull();
+    expect(user.userNickName).toBe(userBeforeUpdate.userNickName);
+  });
+
+  it('아이디가 중복된 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+    expect(response.status).toBe(200);
+
+
+    const responseAnotherUser = await request(app).post('/api/user/signup').send(getTestSignUpUserData(2));
+    expect(responseAnotherUser.status).toBe(200);
+
+    const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
+
+    const idUpdate =  {
+      userUUID: userBeforeUpdate.userUUID,
+      userUID: userBeforeUpdate.userUID,
+      userDeviceID: userBeforeUpdate.userDeviceID,
+      userPhoneNumber: userBeforeUpdate.userPhoneNumber,
+      dialCode: userBeforeUpdate.dialCode,
+      isoCode: userBeforeUpdate.isoCode,
+      userID: getTestSignUpUserData(2).userID,
+      userPassword: getTestSignUpUserData(1).userPassword,
+      userProfileImage: userBeforeUpdate.userProfileImage,
+      userNickName: userBeforeUpdate.userNickName,
+      userGender: userBeforeUpdate.userGender,
+      userBirthDate: userBeforeUpdate.userBirthDate,
+      termsVersion: userBeforeUpdate.termsVersion,
+      privacyVersion: userBeforeUpdate.privacyVersion,
+    };
+
+    const result = await request(app)
+    .post('/api/user/update-user-info')
+    .send(idUpdate);
+
+    expect(result.status).toBe(400);
+    expect(result.body.failureReason).toBe(FailureReason.USER_ID_NOT_AVAILABLE);
+
+    // 변경되지 않았는지 확인
+    const user = await SignupUser.findOne({ userID: idUpdate.userID });
+    expect(user.userNickName).toBe(getTestSignUpUserData(2).userNickName);
+  });
+
+  it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+    expect(response.status).toBe(200);
+
+    const {userPassword, ...removePasswordData} = getTestUpdateUserData(1);
+    const result = await request(app)
+    .post('/api/user/update-user-info')
+    .send(removePasswordData);
+
+    expect(result.status).toBe(400);
+    expect(result.body.failureReason).toBe(FailureReason.PASSWORD_EMPTY);
+  });
 });
 
 describe('update-user-phonenumber', () => {
@@ -708,5 +941,13 @@ describe('update-user-phonenumber', () => {
 
     expect(result.status).toBe(400);
     expect(result.body.failureReason).toBe(FailureReason.PASSWORD_NOT_MATCH);
+  });
+
+  it('비밀번호가 없는 경우, 에러 응답을 반환해야 한다.', async () => {
+    const { userPassword, ...removePasswordData } = getTestPhoneNumberUpdateData(1);
+    const response = await request(app).post('/api/user/update-user-phonenumber').send(removePasswordData);
+
+    expect(response.status).toBe(400);
+    expect(response.body.failureReason).toBe(FailureReason.PASSWORD_EMPTY);
   });
 });

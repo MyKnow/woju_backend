@@ -48,24 +48,23 @@ async function checkPhoneNumberAvailableService(userDeviceID, userPhoneNumber, d
   
       // 각 저장소에 동일한 전화번호가 존재하지 않는 경우, 사용 가능한 전화번호로 판단하여 임시 저장소에 저장
       if (!tempPhoneNumber && !user) {
-        // console.log('전화번호 사용 가능 : (최초 등록)');
         // 임시 저장소에 사용자 정보 저장 (10분 후 자동 삭제)
         await TempPhoneNumber.create({ userDeviceID: userDeviceID, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode : isoCode });
         // 응답
         return { isAvailable: true, isAlreadyRegistered: false, message: '해당 전화번호는 사용 가능합니다.' };
       }
       // 각 저장소에 동일한 전화번호가 있고, 그 전화번호가 현재 요청한 사용자의 userDeviceID와 같은 경우, 사용 가능한 전화번호로 판단
-      else if ((tempPhoneNumber && tempPhoneNumber.userDeviceID === userDeviceID)) {
-        // console.log('전화번호 사용 가능 : (이미 가등록된 전화번호)');
+      else if ((tempPhoneNumber && tempPhoneNumber.userDeviceID === userDeviceID)) {  
+        // 전화번호 사용 가능 : (이미 가등록된 전화번호)
         return { isAvailable: true, isAlreadyRegistered: false, message: '해당 전화번호는 사용 가능합니다.' };
       }
       else if ((user && user.userDeviceID === userDeviceID)) {
-        // console.log('전화번호 사용 가능 : (이미 등록된 전화번호)');
+        // 전화번호 사용 가능 : (이미 등록된 전화번호
         return { isAvailable: true, isAlreadyRegistered: true, message: '해당 전화번호는 사용 가능합니다.' };
       }
       // 각 저장소에 동일한 전화번호가 있고, 그 전화번호가 현재 요청한 사용자의 userDeviceID와 다른 경우, 사용 불가능한 전화번호로 판단
       else {
-        // console.log('전화번호 사용 불가');
+        // 전화번호 사용 불가
         return { isAvailable: false, isAlreadyRegistered: true, message: '해당 전화번호는 이미 사용 중입니다.' };
       }
     } catch (error) {
@@ -90,13 +89,13 @@ async function checkUserIDAvailableService(userUID, userID) {
     try {
       // 아이디 유효성 검사
       if (!userID || userID.trim() === '') {
-        // console.log('아이디가 없음');
+        // 아이디가 없는 경우, 입력해달라는 메시지 반환
         return { isAvailable: false, message: '아이디를 입력해주세요.' };
       }
   
       // userUID 유효성 검사
       if (!userUID || userUID.trim() === '') {
-        // console.log('userUID가 없음');
+        // 사용자 정보가 없는 경우, 입력해달라는 메시지 반환
         return {isAvailable: false, message: '사용자 정보가 없습니다.'};
       }
   
@@ -108,7 +107,7 @@ async function checkUserIDAvailableService(userUID, userID) {
   
       // 각 저장소에 동일한 아이디가 존재하지 않는 경우, 사용 가능한 아이디으로 판단하여 임시 저장소에 저장
       if (!tempUserID && !user) {
-        // console.log('아이디 사용 가능 : (최초 등록)');
+        // ('아이디 사용 가능 : (최초 등록)');
         // 임시 저장소에 사용자 정보 저장 (10분 후 자동 삭제)
         await TempUserID.create({ userUID: userUID, userID: userID });
         // 응답
@@ -116,15 +115,15 @@ async function checkUserIDAvailableService(userUID, userID) {
       }
       // 각 저장소에 동일한 아이디가 있고, 그 아이디가 현재 요청한 사용자의 UID와 같은 경우, 사용 가능한 아이디으로 판단
       else if ((tempUserID && tempUserID.userUID === userUID)) {
-        // console.log('아이디 사용 가능 : (이미 가등록된 아이디)');
+        // 아이디 사용 가능 : (이미 가등록된 아이디)
         return { isAvailable: true,isAlreadyRegistered: false,  message: '해당 아이디은 사용 가능합니다.' };
       } else if ((user && user.userUID === userUID)) {
-        // console.log('아이디 사용 가능 : (이미 등록된 아이디)');
+        // 아이디 사용 가능 : (이미 등록된 아이디)
         return { isAvailable: true,isAlreadyRegistered: true,  message: '해당 아이디은 사용 가능합니다.' };
       }
       // 각 저장소에 동일한 아이디가 있고, 그 아이디가 현재 요청한 사용자의 UID와 다른 경우, 사용 불가능한 아이디으로 판단
       else {
-        // console.log('아이디 사용 불가');
+        // 아이디 사용 불가
         return { isAvailable: false, isAlreadyRegistered: true, message: '해당 아이디은 이미 사용 중입니다.' };
       }
     } catch (error) {

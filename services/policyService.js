@@ -1,5 +1,5 @@
 // services/policyService.js
-const { Policy } = require('../models/policyModel');
+const { Policy, PolicyType, CountryType } = require('../models/policyModel');
 
 /** # 이용 약관 내용을 조회하는 비동기 함수
  * 
@@ -22,6 +22,53 @@ const getPolicyContentService = async (type, version, country) => {
     }
 };
 
+/** # PolicyType 유효성 검사 함수
+ * 
+ * - PolicyType 값이 유효한지 검사하는 함수
+ * 
+ * ### Parameters
+ * @param {string} type PolicyType 값
+ * 
+ * ### Returns
+ * @returns {boolean} 유효한 PolicyType 값인지 여부
+ */
+function isValidPolicyType(type) {
+    return Object.values(PolicyType).includes(type);
+  }
+  
+  /** # CountryType 유효성 검사 함수
+   * 
+   * - CountryType 값이 유효한지 검사하는 함수
+   * 
+   * ### Parameters
+   * @param {string} country CountryType 값
+   * 
+   * ### Returns
+   * @returns {boolean} 유효한 CountryType 값인지 여부
+   */
+  function isValidCountryType(country) {
+    return Object.values(CountryType).includes(country);
+  }
+  
+  /** # Version 유효성 검사 함수
+   * 
+   * - Version 값이 유효한지 검사하는 함수
+   * - Version 값은 x.x.x 또는 x.x.x-type 형식이어야 함
+   * 
+   * ### Parameters
+   * @param {string} version Version 값
+   * 
+   * ### Returns
+   * @returns {boolean} 유효한 Version 값인지 여부
+   */
+  function isValidVersion(version) {
+    const regex = /^\d+\.\d+\.\d+(-\w+)?$/;
+    return regex.test(version);
+  }
+
 module.exports = {
     getPolicyContentService,
+    isValidPolicyType,
+    isValidCountryType,
+    isValidVersion,
 };
