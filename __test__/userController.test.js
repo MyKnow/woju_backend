@@ -135,6 +135,38 @@ describe('checkPhoneNumberAvailable', () => {
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
   });
+
+  it('전화번호를 입력하지 않은 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app)
+    .post('/api/user/check-phonenumber-available')
+    .send({ userDeviceID: 'testDeviceID' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('userDeviceID를 입력하지 않은 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app)
+    .post('/api/user/check-phonenumber-available')
+    .send({ userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('dialCode를 입력하지 않은 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app)
+    .post('/api/user/check-phonenumber-available')
+    .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', isoCode: 'KR' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('isoCode를 입력하지 않은 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app)
+    .post('/api/user/check-phonenumber-available')
+    .send({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82' });
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe('checkUserIDAvailable', () => {
@@ -231,6 +263,22 @@ describe('checkUserIDAvailable', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
+  });
+
+  it('아이디를 입력하지 않은 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app)
+    .post('/api/user/check-userid-available')
+    .send({ userUID: 'testUID' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('userUID를 입력하지 않은 경우, 에러 응답을 반환해야 한다.', async () => {
+    const response = await request(app)
+    .post('/api/user/check-userid-available')
+    .send({ userID: 'testUserID' });
+
+    expect(response.status).toBe(400);
   });
 });
 

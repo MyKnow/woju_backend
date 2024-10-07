@@ -3,21 +3,21 @@
 // 필요한 모델 불러오기
 const { Policy, PolicyType, isValidPolicyType, isValidCountryType } = require('../models/policyModel');
 const { verifyAdmin } = require('../utils/auth');  // 미들웨어 불러오기
-
+const { getPolicyContentService } = require('../services/policyService');
 
 /** # 이용 약관 내용 GET API
  * 
  * - 약관 종류와 국가 코드에 해당하는 약관을 조회한다.
  * 
- * ### Route
+ * ## Route
  * @route GET /policy/terms
  * 
- * ### Query Params
+ * ## Query Params
  * @param {string} req.query.type - 약관 종류 (필수)
  * @param {string} req.query.country - 국가 코드 (필수)
  * @param {string} req.query.version - 약관 버전 (선택)
  * 
- * ### Responses
+ * ## Responses
  * @returns {object} 200 - json : { version : string, content : string }
  * @returns {Error}  400 - type, version, country 값이 모두 채워지지 않음
  * @returns {Error}  404 - 약관 내용이 존재하지 않음
@@ -38,34 +38,13 @@ exports.getPolicyContent = async (req, res) => {
 
   const searchVersion = version ? version : null;
   
-  const policy = await getPolicyContentFunction(type, searchVersion, country);
+  const policy = await getPolicyContentService(type, searchVersion, country);
 
   if (!policy) {
     return res.status(404).json({ message: '약관 내용이 존재하지 않습니다.' });
   }
 
   return res.status(200).json({ version: policy.version, content: policy.content });
-};
-
-/** # 이용 약관 내용을 조회하는 비동기 함수
- * 
- * - 약관 종류와 국가 코드에 해당하는 약관을 조회한다.
- * 
- * ### Parameters
- * @param {string} type - 약관 종류
- * @param {string} country - 국가 코드
- * @param {string} version - 약관 버전 (선택, version 값이 없으면 최신 버전을 조회)
- * 
- * ### Returns
- * @returns {object} Policy 객체
- * 
- */
-const getPolicyContentFunction = async (type, version, country) => {
-  if (version) {
-    return await Policy.findOne({ type, country, version });
-  } else {
-    return await Policy.findOne({ type, country }).sort({ updatedAt: -1 });
-  }
 };
 
 /** # DB에 새로운 이용 약관 추가 API
@@ -217,5 +196,3 @@ exports.deletePolicyContent = [
     }
   }
 ];
-
-exports.getPolicyContentFunction = getPolicyContentFunction;  // 테스트를 위해 내보내기

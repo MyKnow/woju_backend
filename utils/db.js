@@ -17,8 +17,8 @@ async function connectDB() {
       uri = process.env.MONGO_USER_DB_URI;
     }
 
+    // MongoDB에 연결
     await mongoose.connect(uri);
-    // console.log('MongoDB connected');
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
   }

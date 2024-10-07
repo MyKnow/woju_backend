@@ -15,7 +15,7 @@ async function hashPassword(password) {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         return hashedPassword;
     } catch (error) {
-        console.error('비밀번호 해시화 중 오류 발생:', error);
+        // 비밀번호 해시화 중 오류 발생 시
         return null;
     }
 }
@@ -26,7 +26,7 @@ async function comparePassword(password, hashedPassword) {
         const match = await bcrypt.compare(password, hashedPassword);
         return match;
     } catch (error) {
-        console.error('비밀번호 비교 중 오류 발생:', error);
+        // 비밀번호 비교 중 오류 발생 시
         return false;
     }
 }
