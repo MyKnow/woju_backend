@@ -204,7 +204,7 @@ exports.signupUser = async (req, res) => {
     }
   } catch (error) {
     // 예외 발생 시, 서버 오류로 응답
-    return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: '서버 오류입니다.' });
+    return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: error.message });
   }
 }
 
