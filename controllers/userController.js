@@ -13,6 +13,8 @@ const { checkPhoneNumberAvailableService, checkUserIDAvailableService } = requir
 const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
 const { PolicyType, CountryType } = require('../models/policyModel'); // 이용 약관 모델 불러오기
 
+const { logger } = require('../utils/logger');
+
 /** # 전화번호 중복 확인 API
  * 
  * ## Parameters
@@ -36,7 +38,7 @@ exports.checkPhoneNumberAvailable = async (req, res) => {
   // 결과에 따라 응답
   if (result.isAvailable) {
     if (result.isAlreadyRegistered) {
-      return res.status(200).json({ isAvailable: true, isAlreadyRegistered: true, message: '해당 전화번호는 사용 가능하나, 본인이 사용 중입니다.' });
+      return res.status(200).json({ isAvailable: true, isAlreadyRegistered: true, message: '해당 전화번호는 사용 가능하나, 본인이 사용 중입��다.' });
     }
     return res.status(200).json({ isAvailable: true, isAlreadyRegistered: false, message: '해당 전화번호는 사용 가능합니다.' });
   } else {
@@ -282,7 +284,7 @@ exports.loginUser = async (req, res) => {
  * 
  * ## Returns
  * @returns {object} 200 - isSuccess: true
- * @returns {Error} 400 - failureReason: 사용 불가 이유, message: 응답 메시지
+ * @returns {Error} 400 - failureReason: ��용 불가 이유, message: 응답 메시지
  * @returns {Error} 500 - failureReason: SERVER_ERROR
  * 
  */
@@ -377,28 +379,32 @@ exports.updateUserPassword = async (req, res) => {
  * @returns {Error} 500 - failureReason: SERVER_ERROR
  */
 exports.resetUserPassword = async (req, res) => {
-  const {userUID, newPassword } = req.body;
+  const { userUID, userPhoneNumber, dialCode, isoCode, newPassword } = req.body;
 
   try {
-    const user = await SignupUser.findOne({ userUID: userUID });
+    const user = await SignupUser.findOne({ userUID: userUID, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode });
 
-    // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
     if (!newPassword || newPassword.trim() === '') {
+      logger.warn(`비밀번호 입력 누락: userUID=${userUID}`);
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_EMPTY, message: '새 비밀번호를 입력해주세요.' });
     }
 
     if (!user) {
-      return res.status(400).json({ failureReason: FailureReason.USER_UID_EMPTY, message: '사용자 정보가 없습니다.' });
+      logger.warn(`사용자 정보 없음: userUID=${userUID}`);
+      return res.status(400).json({ failureReason: FailureReason.USER_NOT_FOUND, message: '사용자 정보가 없습니다.' });
     }
 
     const hashedPassword = await hashPassword(newPassword);
 
     await SignupUser.updateOne({ userUID: userUID }, { userPassword: hashedPassword });
 
+    // 비밀번호 변경 로그
+    logger.info(`비밀번호 변경 성공: userUID=${userUID}`);
+
     return res.status(200).json({ isSuccess: true });
 
   } catch (error) {
-    // 예외 발생 시, 서버 오류로 응답
+    logger.error(`비밀번호 변경 오류: userUID=${userUID}, error=${error.message}`);
     return res.status(500).json({ failureReason: FailureReason.SERVER_ERROR, message: '서버 오류' });
   }
 }
@@ -589,7 +595,7 @@ exports.updateUserPhoneNumber = async (req, res) => {
       return res.status(200).json({ isSuccess: true });
     }
     else {
-      return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
+      return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않��니다.' });
     }
   } catch (error) {
     // 예외 발생 시, 서버 오류로 응답

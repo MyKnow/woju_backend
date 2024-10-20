@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema({
   privacyVersion: { type: String, required: true, default: DEFAULT_PRIVACY_VERSION },  // 개인정보 처리 방침 버전
   createdAt: { type: Date, default: Date.now },               // 생성일
   lastLoginAt: { type: Date, default: Date.now },             // 마지막 로그인 일
+  lastPasswordUpdateAt: { type: Date, default: Date.now },    // 마지막 비밀번호 변경일
 });
 
 const SignupUser = mongoose.model('SignupUser', userSchema);

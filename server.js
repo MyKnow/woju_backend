@@ -12,6 +12,9 @@ const morgan = require('morgan');
 
 // Express 앱 생성
 const app = express();
+const { loggerMiddleware } = require('./utils/logger');
+
+app.use(loggerMiddleware); // 로그 미들웨어 추가
 app.use(cors()); // CORS 미들웨어 추가
 app.use(express.json({limit: '10mb'})); // JSON 요청 바디를 파싱하기 위한 미들웨어
 app.use(morgan('combined')); // 'combined'는 로그 포맷 중 하나로, 자세한 정보를 제공합니다.

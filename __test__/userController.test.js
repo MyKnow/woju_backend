@@ -612,7 +612,13 @@ describe('reset-user-password', () => {
   it('등록된 사용자 정보로 비밀번호 재설정 요청을 보낸 경우, 비밀번호 재설정이 정상적으로 처리되어야 한다.', async () => {
     await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
 
-    const response = await request(app).post('/api/user/reset-user-password').send({ userUID: getTestSignUpUserData(1).userUID, newPassword: getTestSignUpUserData(2).userPassword });
+    const response = await request(app).post('/api/user/reset-user-password').send({ 
+      userUID: getTestSignUpUserData(1).userUID, 
+      userPhoneNumber: getTestSignUpUserData(1).userPhoneNumber,
+      dialCode: getTestSignUpUserData(1).dialCode,
+      isoCode: getTestSignUpUserData(1).isoCode,
+      newPassword: getTestSignUpUserData(2).userPassword 
+    });
 
     expect(response.status).toBe(200);
 
