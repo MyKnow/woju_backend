@@ -7,6 +7,12 @@ FROM node:20.18.0
 # Container 내부의 작업 디렉토리를 설정
 WORKDIR /app
 
+# 현재의 작업 디렉토리 확인
+RUN pwd
+
+# 현재 작업 디렉토리의 파일 확인
+RUN ls -al
+
 # server_user 서비스에 필요한 패키지 파일을 복사
 COPY package*.json ./
 
