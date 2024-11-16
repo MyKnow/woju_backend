@@ -2,7 +2,7 @@
 
 // 필요한 모델 불러오기
 const { Policy } = require('../models/policyModel');
-const { verifyAdmin } = require('../../shared-utils/auth');  // 미들웨어 불러오기
+const { verifyAdmin } = require('../../shared/utils/auth');  // 미들웨어 불러오기
 const { getPolicyContentService, isValidPolicyType, isValidCountryType  } = require('../services/policyService');
 
 /** # 이용 약관 내용 GET API

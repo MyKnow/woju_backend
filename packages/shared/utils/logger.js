@@ -20,7 +20,7 @@ const LOG_LEVELS = {
  */
 function getLogFilePath() {
   // 로그 파일 경로: 서버 최상위 폴더에 YYYY-MM-DD.log 파일로 저장
-  const logDirectory = path.join(__dirname, '..', 'logs');
+  const logDirectory = path.join(__dirname, '../../..', 'logs');
   if (!fs.existsSync(logDirectory)) {
     fs.mkdirSync(logDirectory); // 로그 폴더가 없으면 생성
   }

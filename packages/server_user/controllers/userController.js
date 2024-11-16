@@ -5,15 +5,15 @@ const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리
 // 필요한 모델 불러오기
 const TempPhoneNumber = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 const TempUserID = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
-const { SignupUser } = require('../../shared-models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
-const { hashPassword, comparePassword } = require('../../shared-utils/crypto');  // 비밀번호 해시화 및 비교 함수 불러오기
-const { FailureReason } = require('../../shared-models/responseModel');  // 응답 실패 이유 불러오기
+const { SignupUser } = require('../../shared/models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
+const { hashPassword, comparePassword } = require('../../shared/utils/crypto');  // 비밀번호 해시화 및 비교 함수 불러오기
+const { FailureReason } = require('../../shared/models/responseModel');  // 응답 실패 이유 불러오기
 
 const { checkPhoneNumberAvailableService, checkUserIDAvailableService } = require('../services/userService');  // 전화번호 중복 확인 함수 불러오기
 const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
 const { PolicyType, CountryType } = require('../models/policyModel'); // 이용 약관 모델 불러오기
 
-const { logger } = require('../../shared-utils/logger');  // 로거 불러오기
+const { logger } = require('../../shared/utils/logger');  // 로거 불러오기
 
 /** # 전화번호 중복 확인 API
  * 

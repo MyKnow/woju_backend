@@ -2,7 +2,7 @@
 
 const TempPhoneNumber = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 const TempUserID = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
-const { SignupUser } = require('../../shared-models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
+const { SignupUser } = require('../../shared/models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
 
 /** # 전화번호 중복 확인 및 저장 함수
  * 

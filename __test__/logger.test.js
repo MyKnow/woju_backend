@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const { logger } = require('../shared-utils/logger'); 
 const { format } = require('date-fns');
 const express = require('express');
 const request = require('supertest');
+
+const { logger } = require('../packages/shared/utils/logger'); 
 
 describe('Logger Utility Test', () => {
   const mockIp = '127.0.0.1';

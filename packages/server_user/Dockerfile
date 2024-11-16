@@ -1,20 +1,26 @@
-# Use an official Node.js runtime as the base image
-FROM node:18.20.3   
+# packages/server_user/Dockerfile
+# Mono-repo의 packages/server_user 서비스를 위한 Dockerfile
 
-# Set the working directory inside the container
+# Node 버전을 20.18.0으로 변경하고, 서버가 사용하는 패키지를 복사.
+FROM node:20.18.0
+
+# Container 내부의 작업 디렉토리를 설정
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
+# server_user 서비스에 필요한 패키지 파일을 복사
+COPY packages/server_user/package*.json ./
 
-# Install dependencies
+# 패키지 설치
 RUN npm install --save
 
-# Copy the rest of the application code to the working directory
-COPY . .
+# server_user 서비스에 필요한 소스 코드를 복사
+COPY packages/server_user/ .
 
-# Expose the port on which your server will listen
+# packages/shared 폴더 내부의 Utils, Models, Services 폴더를 복사
+COPY packages/shared/* .
+
+# 서버가 사용할 포트를 노출
 EXPOSE 3000
 
-# Start the server
+# 서버 실행
 CMD [ "node", "server.js" ]

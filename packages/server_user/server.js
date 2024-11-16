@@ -1,6 +1,6 @@
 // server.js
 const express = require('express');
-const { connectDB } = require('../shared-utils/db'); // DB 연결 로직
+const { connectDB } = require('../shared/utils/db'); // DB 연결 로직
 const userRoutes = require('./routes/userRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const policyRoutes = require('./routes/policyRoutes');
@@ -11,7 +11,7 @@ const morgan = require('morgan');
 
 // Express 앱 생성
 const app = express();
-const { logger, httpLogger } = require('../shared-utils/logger');
+const { logger, httpLogger } = require('../shared/utils/logger');
 
 // 로깅 미들웨어들을 라우터보다 먼저 설정
 app.use(httpLogger);

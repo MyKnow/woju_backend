@@ -5,16 +5,16 @@ const request = require('supertest');
 const express = require('express');
 
 // 필요한 Util 불러오기
-const { connectDB, disconnectDB } = require('../shared-utils/db');
-const { comparePassword } = require('../shared-utils/crypto');
+const { connectDB, disconnectDB } = require('../packages/shared/utils/db');
+const { comparePassword } = require('../packages/shared/utils/crypto');
 
 // 필요한 Model 불러오기
-const TempPhoneNumber = require('../server_user/models/tempPhoneNumberModel');
-const TempUserID = require('../server_user/models/tempUserIDModel');
-const { SignupUser, getTestSignUpUserData, getTestSignInUserData, getTestUpdateUserData, getTestPhoneNumberUpdateData } = require('../shared-models/userModel');
-const userRoutes = require('../server_user/routes/userRoutes');
-const { FailureReason } = require('../shared-models/responseModel');
-const { Policy, PolicyType, CountryType } = require('../server_user/models/policyModel');
+const TempPhoneNumber = require('../packages/server_user/models/tempPhoneNumberModel');
+const TempUserID = require('../packages/server_user/models/tempUserIDModel');
+const { SignupUser, getTestSignUpUserData, getTestSignInUserData, getTestUpdateUserData, getTestPhoneNumberUpdateData } = require('../packages/shared/models/userModel');
+const userRoutes = require('../packages/server_user/routes/userRoutes');
+const { FailureReason } = require('../packages/shared/models/responseModel');
+const { Policy, PolicyType, CountryType } = require('../packages/server_user/models/policyModel');
 
 // 테스트용 Express 앱 설정
 const app = express();
