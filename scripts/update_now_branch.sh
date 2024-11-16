@@ -62,16 +62,24 @@ read -p "커밋 메시지를 입력해주세요: " commit_message
 if [[ $current_branch == "main" ]]; then
     # 변경된 서비스 확인
     changed_services=$(detect_changed_services)
-    
+
     for service in $changed_services; do
         service_path="packages/$service"
         if [ -f "$service_path/package.json" ]; then
+            # 현재 버전 확인 (package.json과 README.md에 기록된 버전이 동일한지 확인)
             current_version=$(node -p "require('./$service_path/package.json').version")
+            readme_version=$(grep -oP "Version: \K[0-9.]*" "$service_path/README.md")
+
+            if [ "$current_version" != "$readme_version" ]; then
+                echo -e "${RED}README.md와 package.json의 버전이 일치하지 않습니다.${NC}"
+                exit 1
+            fi
             
             echo -e "\n${YELLOW}$service 서비스의 버전 업데이트 (현재: $current_version)${NC}"
             echo "1: Major 버전 업데이트 (x+1.0.0)"
             echo "2: Minor 버전 업데이트 (x.y+1.0)"
             echo "3: Patch 버전 업데이트 (x.y.z+1)"
+            echo "4: 업데이트 취소"
             read -p "선택(1~3): " version_choice
             
             # 버전 업데이트
@@ -79,6 +87,7 @@ if [[ $current_branch == "main" ]]; then
                 1) new_version=$(npm version major --prefix $service_path);;
                 2) new_version=$(npm version minor --prefix $service_path);;
                 3) new_version=$(npm version patch --prefix $service_path);;
+                4) echo -e "${RED}취소되었습니다.${NC}"; exit 1;;
                 *) echo -e "${RED}잘못된 선택입니다.${NC}"; exit 1;;
             esac
             
@@ -86,6 +95,9 @@ if [[ $current_branch == "main" ]]; then
             
             # README.md 버전 업데이트
             sed -i "s/Version: .*$/Version: ${new_version#v}/" "$service_path/README.md"
+
+            # package.json 버전 업데이트
+            sed -i "s/\"version\": \".*\"/\"version\": \"${new_version#v}\"/" "$service_path/package.json"
         fi
     done
 fi
@@ -113,7 +125,7 @@ done
 for file in "${files[@]}"; do
   if [ -f "$file" ]; then
     sha256sum "$file" > "$file.sha256"
-    echo "$file 파일의 새로운 SHA-256 해시를 $file.sha256 파일로 저장했습니다."
+    echo "$file 파일의 SHA-256 해시 값을 생성했습니다."
   else
     echo "$file 파일이 존재하지 않습니다."
   fi
