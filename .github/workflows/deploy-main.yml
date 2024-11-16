@@ -47,7 +47,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/woju-${{ matrix.server }}:latest
 
-      - name: Deploy Docker Image to Server
+      - name: Deploy Docker Image to Server (~/woju-server 아래에 shared, 각 서버 이름으로 디렉토리가 있어야 함)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.RELEASE_SERVER_HOST }}
@@ -55,6 +55,6 @@ jobs:
           password: ${{ secrets.RELEASE_SERVER_PASSWORD }}
           port: ${{ secrets.RELEASE_SERVER_PORT }}
           script: |
-            cd ~/woju-server
+            cd ~/woju-server/${{ matrix.server }}
             docker-compose pull woju-${{ matrix.server }}
             docker-compose up -d woju-${{ matrix.server }}
