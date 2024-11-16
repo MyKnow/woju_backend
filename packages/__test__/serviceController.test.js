@@ -2,8 +2,8 @@
 
 const request = require('supertest'); // HTTP 요청을 모의하기 위해 사용
 const express = require('express');
-const { connectDB, disconnectDB } = require('../utils/db');
-const serviceRoutes = require('../routes/serviceRoutes');
+const { connectDB, disconnectDB } = require('../shared-utils/db');
+const serviceRoutes = require('../user/routes/serviceRoutes');
 const mongoose = require('mongoose');
 
 // 테스트용 Express 앱 설정

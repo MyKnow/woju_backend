@@ -1,8 +1,24 @@
 {
+  "name": "woju-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "MyKnow",
+  "license": "ISC",
+  "description": "Backend server for Woju",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "data-fns": "^1.1.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
@@ -12,18 +28,5 @@
     "supertest": "^7.0.0",
     "uuid": "^10.0.0",
     "winston": "^3.15.0"
-  },
-  "name": "woju",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "jest": "^29.7.0"
   }
 }

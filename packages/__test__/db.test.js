@@ -1,6 +1,6 @@
 // __test__/db.test.js
 
-const { connectDB, disconnectDB } = require('../utils/db');
+const { connectDB, disconnectDB } = require('../shared-utils/db');
 
 describe('DB Utility Test', () => {
     // process.env.NODE_ENV === 'test'일 때 테스트

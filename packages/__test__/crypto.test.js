@@ -1,6 +1,5 @@
 // __test__/crypto.test.js
-
-const { hashPassword, comparePassword, encryptData, decryptData } = require('../utils/crypto');
+const { hashPassword, comparePassword, encryptData, decryptData } = require('../shared-utils/crypto');
 
 describe('Crypto Utility Test', () => {
     test('비밀번호 해시화 테스트', async () => {

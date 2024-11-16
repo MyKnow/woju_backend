@@ -2,9 +2,9 @@ const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
-const { connectDB, disconnectDB } = require('../utils/db');
-const policyRoutes = require('../routes/policyRoutes');
-const { Policy, PolicyType, CountryType } = require('../models/policyModel');
+const { connectDB, disconnectDB } = require('../shared-utils/db');
+const policyRoutes = require('../user/routes/policyRoutes');
+const { Policy, PolicyType, CountryType } = require('../user/models/policyModel');
 
 // 테스트용 Express 앱 설정
 const app = express();

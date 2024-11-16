@@ -1,14 +1,55 @@
-# Name: Woju CI/CD for woju-user-server
-name: CI/CD for woju-user-server
+# Name: Woju CI/CD for woju-monorepo
+name: CI/CD for woju-monorepo
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'packages/server_*/README.md'
 
 jobs:
-  deploy:
+  check-version:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      
+      - name: Check version changes
+        id: set-matrix
+        run: |
+          # 변경된 서버 목록을 저장할 배열
+          changed_servers=()
+          for server_dir in packages/server_*/; do
+            if [ -f "${server_dir}README.md" ]; then
+              server_name=$(basename $server_dir)
+              
+              # 이전 버전과 현재 버전 추출
+              OLD_VERSION=$(git show HEAD^:"${server_dir}README.md" | grep -i "version:" | awk '{print $2}' || echo "")
+              CURRENT_VERSION=$(grep -i "version:" "${server_dir}README.md" | awk '{print $2}' || echo "")
+              
+              if [ "$OLD_VERSION" != "$CURRENT_VERSION" ] && [ ! -z "$CURRENT_VERSION" ]; then
+                changed_servers+=("{\"name\":\"$server_name\",\"version\":\"$CURRENT_VERSION\"}")
+              fi
+            fi
+          done
+          
+          # JSON 형식으로 변환
+          matrix_json="{\"include\":[$(IFS=,; echo "${changed_servers[*]}")]}"
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
+          echo "Found changes in servers: $matrix_json"
+
+  deploy:
+    needs: check-version
+    if: fromJSON(needs.check-versions.outputs.matrix).include[0] != null
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.check-version.outputs.matrix)}}
 
     steps:
       - name: Checkout repository
@@ -32,11 +73,13 @@ jobs:
       - name: Build and push Docker Image
         uses: docker/build-push-action@v2
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./packages/${{ matrix.name }}
+          file: ./packages/${{ matrix.name }}/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/woju-user-server
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/woju-${{ matrix.name }}:${{ matrix.version }}
+            ${{ secrets.DOCKER_USERNAME }}/woju-${{ matrix.name }}:latest
 
       - name: Deploy Docker Image to Server
         uses: appleboy/ssh-action@v1.0.3
@@ -47,5 +90,6 @@ jobs:
           port: ${{ secrets.RELEASE_SERVER_PORT }}
           script: |
             cd ~/woju-server
-            docker-compose pull woju-user-server
-            docker-compose up -d woju-user-server
+            echo '${{ matrix.version }}' > ${{ matrix.name }}_version.txt
+            docker-compose pull ${{ matrix.name }}
+            docker-compose up -d ${{ matrix.name }}

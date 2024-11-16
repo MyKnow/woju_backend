@@ -24,8 +24,7 @@ echo -e "\nUpdate Type을 선택해주세요. (현재 Version: $current_version)
 echo "1: Main Version Update (+1.x.x)"
 echo "2: Sub Version Update (x.+1.x)"
 echo "3: Minor Version Update (x.x.+1)"
-echo "4: Version Update 하지 않음"
-read -p "선택(1~4): " choice
+read -p "선택(1~3): " choice
 
 
 # 선택에 따라 버전 업데이트
@@ -42,27 +41,14 @@ case $choice in
   3) # Minor version update
     let minor+=1
     ;;
-  4) # No version update
-    let build-=1
-    ;;
   *)
     echo "잘못된 선택입니다."
     exit 1
     ;;
 esac
 
-# 빌드 번호 업데이트
-let build+=1
-
 # 새로운 버전 생성
-new_version="${major}.${sub}.${minor}+${build}"
-
-# pubspec.yaml에 새로운 버전 업데이트
-sed -i '' "s/version: .*/version: ${new_version}/" pubspec.yaml
-
-# Dart File에 새로운 버전 업데이트
-# dart_file_path="lib/services/app_version_service.dart"
-# sed -i '' "s/return \"$current_version\";/return \"$new_version\";/" $dart_file_path
+new_version="${major}.${sub}.${minor}"
 
 # 암호화
 # 파일 목록
