@@ -14,8 +14,11 @@ COPY server_user/package*.json ./server_user/
 # server_user 서비스에 필요한 소스 코드를 복사
 COPY server_user/* ./server_user/
 
-# packages/shared 폴더 내부의 Utils, Models, Services 폴더를 최상위에 복사
-COPY shared/* ./shared/
+# packages/shared 폴더 내부 폴더를 최상위에 복사
+COPY shared ./shared
+
+# server_user 폴더 내부 확인
+RUN ls -al ./server_user
 
 # 서버에 필요한 패키지를 설치 (/server_user 폴더 내부의 package.json을 참조)
 RUN npm install --save --prefix server_user
