@@ -91,19 +91,75 @@ if [[ $current_branch == "main" ]]; then
 fi
 
 # 환경 파일 암호화
-if [ -f ".env" ]; then
-    echo -e "\n${YELLOW}환경 파일 암호화를 진행합니다.${NC}"
-    read -s -p "암호를 입력하세요: " password
-    echo
-    
-    openssl aes-256-cbc -pbkdf2 -in .env -out .env.enc -k "$password"
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}환경 파일 암호화 완료${NC}"
+# 암호화
+# 파일 목록
+files=(".env")
+
+# 변경된 파일 목록 초기화
+changed_files=()
+
+# 임시 디렉토리 생성
+tmp_dir=$(mktemp -d)
+
+# 원본 파일에 대한 SHA-256 해시 값 읽기 및 저장
+for file in "${files[@]}"; do
+  sha256_file="$file.sha256"
+  if [ -f "$sha256_file" ]; then
+    cat "$sha256_file" > "$tmp_dir/$(basename $file).sha256"
+  fi
+done
+
+# 새로운 SHA-256 해시 파일 생성
+for file in "${files[@]}"; do
+  if [ -f "$file" ]; then
+    sha256sum "$file" > "$file.sha256"
+    echo "$file 파일의 새로운 SHA-256 해시를 $file.sha256 파일로 저장했습니다."
+  else
+    echo "$file 파일이 존재하지 않습니다."
+  fi
+done
+
+echo -e "\n파일 변경 사항을 확인합니다."
+
+# 새로운 SHA-256 해시 값 읽기 및 비교
+for file in "${files[@]}"; do
+  sha256_file="$file.sha256"
+  old_sha256_file="$tmp_dir/$(basename $file).sha256"
+  if [ -f "$sha256_file" ]; then
+    new_hash=$(cat "$sha256_file")
+    if [ -f "$old_sha256_file" ]; then
+      old_hash=$(cat "$old_sha256_file")
+      if [ "$old_hash" != "$new_hash" ]; then
+        echo "$file 파일이 변경되었습니다."
+        changed_files+=("$file")
+      else
+        echo "$file 파일이 변경되지 않았습니다."
+      fi
     else
-        echo -e "${RED}환경 파일 암호화 실패${NC}"
-        exit 1
+      echo "$old_sha256_file 파일이 존재하지 않습니다. 변경 사항을 확인할 수 없습니다."
+      changed_files+=("$file")
     fi
+  else
+    echo "$sha256_file 파일이 존재하지 않습니다."
+  fi
+done
+
+# 변경된 파일이 있는 경우 암호화 진행
+if [ ${#changed_files[@]} -ne 0 ]; then
+  echo -e "\n변경된 파일이 있습니다. 암호화를 진행합니다."
+  echo -e "\n암호를 입력해주세요 : "
+  read -s password
+  
+  for file in "${changed_files[@]}"; do
+    openssl aes-256-cbc -pbkdf2 -in "$file" -out "$file.enc" -k $password
+    echo "$file 파일을 암호화했습니다."
+  done
+else
+  echo -e "\n파일이 변경되지 않았습니다. 암호화를 진행하지 않습니다."
 fi
+
+# 임시 디렉토리 삭제
+rm -rf "$tmp_dir"
 
 # 최종 확인
 echo -e "\n${YELLOW}커밋 메시지 -> $commit_type: $commit_message${NC}"
