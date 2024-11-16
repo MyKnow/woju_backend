@@ -8,16 +8,16 @@ FROM node:20.18.0
 WORKDIR /app
 
 # server_user 서비스에 필요한 패키지 파일을 복사
-COPY packages/server_user/package*.json ./
-
-# 패키지 설치
-RUN npm install --save
+COPY package*.json ./
 
 # server_user 서비스에 필요한 소스 코드를 복사
-COPY packages/server_user/* .
+COPY . .
 
-# packages/shared 폴더 내부의 Utils, Models, Services 폴더를 복사
-COPY packages/shared/* .
+# packages/shared 폴더 내부의 Utils, Models, Services 폴더를 최상위에 복사
+COPY ../shared/* .
+
+# 서버에 필요한 패키지를 설치
+RUN npm install --save
 
 # 서버가 사용할 포트를 노출
 EXPOSE 3000
