@@ -17,14 +17,11 @@ COPY server_user/* ./server_user/
 # packages/shared 폴더 내부의 Utils, Models, Services 폴더를 최상위에 복사
 COPY shared/* ./shared/
 
-# server_user 폴더 내부로 이동
-WORKDIR /app/server_user
-
-# 서버에 필요한 패키지를 설치
-RUN npm install
+# 서버에 필요한 패키지를 설치 (/server_user 폴더 내부의 package.json을 참조)
+RUN npm install --save --prefix server_user
 
 # 서버가 사용할 포트를 노출
 EXPOSE 3000
 
-# 서버 실행
-CMD [ "node", "server.js" ]
+# 서버 실행 (server_user 폴더 내부의 server.js 파일을 실행)
+CMD [ "node", "server_user/server.js" ]
