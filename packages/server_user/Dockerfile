@@ -5,6 +5,12 @@
 FROM node:20.18.0
 
 # Container 내부의 작업 디렉토리를 설정
+RUN pwd
+
+# Container 내부의 작업 디렉토리의 파일 확인
+RUN ls -al
+
+# Container 내부의 작업 디렉토리를 설정
 WORKDIR /app
 
 # 현재의 작업 디렉토리 확인
