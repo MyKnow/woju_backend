@@ -9,8 +9,8 @@ RUN npm install -g pnpm
 # Container 내부의 작업 디렉토리를 설정
 WORKDIR /app
 
-# 모노레포 루트의 package.json과 pnpm-lock.yaml 파일을 컨텍스트에서 복사
-COPY package.json pnpm-lock.yaml ./
+# 모노레포 루트의 package.json과 pnpm-workspace.yaml을 복사
+COPY package.json pnpm-workspace.yaml ./
 
 # 종속성 설치
 RUN pnpm install
