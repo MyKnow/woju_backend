@@ -1,20 +1,20 @@
-# packages/server_user/Dockerfile
-# Mono-repo의 packages/server_user 서비스를 위한 Dockerfile
-# context: packages
-
-# Node 버전을 20.18.0으로 변경하고, 서버가 사용하는 패키지를 복사.
+# Node 버전을 20.18.0으로 변경하고, pnpm 설치
 FROM node:20.18.0
+
+# pnpm 설치
+RUN npm install -g pnpm
 
 # Container 내부의 작업 디렉토리를 설정
 WORKDIR /app
 
-# server_user 서비스에 필요한 패키지 파일을 /server_user 폴더로 복사
-COPY server_user/package*.json ./server_user/
+# 모노레포 루트의 package.json과 pnpm-lock.yaml 파일을 컨텍스트에서 복사
+COPY package.json pnpm-lock.yaml ./
 
-# server_user 폴더를 Container 내부의 /server_user 폴더로 복사
+# 종속성 설치
+RUN pnpm install
+
+# server_user 폴더와 shared 폴더를 컨텍스트에서 복사
 COPY server_user ./server_user
-
-# packages/shared 폴더 내부 폴더를 최상위에 복사
 COPY shared ./shared
 
 # server_user 폴더 내부 확인
@@ -23,11 +23,11 @@ RUN ls -al ./server_user
 # shared 폴더 내부 확인
 RUN ls -al ./shared
 
-# 서버에 필요한 패키지를 설치 (/server_user 폴더 내부의 package.json을 참조)
-RUN npm install --save --prefix server_user
+# 서버에 필요한 패키지를 설치
+RUN pnpm install --filter server_user...
 
 # 서버가 사용할 포트를 노출
 EXPOSE 3000
 
-# 서버 실행 (server_user 폴더 내부의 server.js 파일을 실행)
+# 서버 실행
 CMD [ "node", "server_user/server.js" ]
