@@ -55,6 +55,7 @@ jobs:
           password: ${{ secrets.RELEASE_SERVER_PASSWORD }}
           port: ${{ secrets.RELEASE_SERVER_PORT }}
           script: |
+            mkdir -p ~/woju-server/${{ matrix.server }}
             cd ~/woju-server/${{ matrix.server }}
             docker-compose pull woju-${{ matrix.server }}
             docker-compose up -d woju-${{ matrix.server }}
