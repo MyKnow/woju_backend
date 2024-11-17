@@ -1,4 +1,6 @@
 # Node 버전을 20.18.0으로 변경하고, pnpm 설치
+# 현재 context: .
+# packages/server_user 폴더와 packages/shared 내부의 파일을 컨테이너 내부의 /app 폴더로 복사
 FROM node:20.18.0
 
 # pnpm 설치
@@ -8,14 +10,14 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # 모노레포 루트의 package.json과 pnpm-lock.yaml 파일을 컨텍스트에서 복사
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 
 # 종속성 설치
 RUN pnpm install
 
 # server_user 폴더와 shared 폴더를 컨텍스트에서 복사
-COPY server_user ./server_user
-COPY shared ./shared
+COPY packages/server_user ./server_user
+COPY packages/shared ./shared
 
 # server_user 폴더 내부 확인
 RUN ls -al ./server_user
