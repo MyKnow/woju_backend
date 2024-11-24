@@ -6,7 +6,7 @@ const { isMongoDBConnected } = require('../../shared/utils/db');
 
 // 필요한 서비스 불러오기
 const { addItem, parameterCheckForAddItem } = require('../services/itemService');
-const { isExistUserUUID } = require('../../server_user/services/userService');
+const { isExistUserUUID } = require('../../shared/services/userService');
 
 /**
  * @name healthCheck

@@ -3,10 +3,10 @@
 // 필요한 모듈 불러오기
 const { createTempPhoneNumberModel } = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 const { createTempUserIDModel } = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
-const { createUserModel } = require('../../shared/models/userModel');          // 사용자 모델
+const { createUserModel } = require('../models/userModel');          // 사용자 모델
 
 // 필요한 Util 불러오기
-const { connectDB, isMongoDBConnected, DBType } = require('../../shared/utils/db');
+const { connectDB, isMongoDBConnected, DBType } = require('../utils/db');
 
 /** # 전화번호 중복 확인 및 저장 함수
  * 

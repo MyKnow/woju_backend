@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 // 필요한 Util 불러오기
-const { DBName } = require('../../shared/utils/db');
+const { DBName } = require('../utils/db');
 
 const tempUserID = new mongoose.Schema({
   userID: {
