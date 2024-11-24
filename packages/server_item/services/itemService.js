@@ -54,7 +54,7 @@ const parameterCheckForAddItem = async function (itemData) {
         } = itemData;
 
         // itemCategory: Category로 변경 가능해야 함.
-        if (typeof itemCategory !== 'string') {
+        if (typeof itemCategory !== 'string' || getCategory(itemCategory) === null) {
             return false;
         }
 
@@ -153,7 +153,7 @@ const addItem = async function (itemData) {
     // 아이템 생성
     const newItem = new Item({
         itemUUID,
-        category,
+        itemCategory: category,
         itemName,
         itemImages,
         itemDescription,

@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
  * @description 교환 장소 데이터 스키마 정의
  * 
  * @field
- * @param {String} locationName - 교환 장소의 이름, Non-Null
  * @param {String} simpleName - 거래 장소의 간단한 이름 (level4나 별도의 건물명이 저장됩니다).
  * @param {String} fullAddress - 거래 장소의 전체 주소 (도로명 주소가 저장됩니다).
  * @param {double} latitude - 거래 장소의 위도.
@@ -15,7 +14,6 @@ const mongoose = require('mongoose');
  * @param {int} zipCode - 거래 장소의 우편번호.
  */
 const locationSchema = new mongoose.Schema({
-    locationName: { type: String, required: true },
     simpleName: { type: String },
     fullAddress: { type: String },
     latitude: { type: Number },
@@ -38,18 +36,12 @@ function isValidateLocation(locationData) {
     }
 
     const {
-        locationName,
         simpleName,
         fullAddress,
         latitude,
         longitude,
         zipCode,
     } = locationData;
-
-    // locationName: String, Non-Null
-    if (typeof locationName !== 'string' || locationName.trim() === '') {
-        return false;
-    }
 
     // simpleName: String, Non-Null
     if (simpleName && typeof simpleName !== 'string') {
@@ -87,7 +79,6 @@ function isValidateLocation(locationData) {
  */
 function getTestLocationData() {
     return {
-        locationName: '서울특별시 강남구 역삼동',
         simpleName: '역삼동',
         fullAddress: '서울특별시 강남구 역삼동',
         latitude: 37.495985,

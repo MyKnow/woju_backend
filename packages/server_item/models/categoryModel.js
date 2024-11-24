@@ -72,8 +72,10 @@ const getCategory = (category) => {
             return Category.PET_GOODS;
         case 'plant':
             return Category.PLANT;
-        default:
+        case 'etc':
             return Category.ETC;
+        default:
+            return null;
     }
 }
 

@@ -87,7 +87,7 @@ describe('POST /api/item/add-item', () => {
             .post('/api/item/add-item')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
-                itemCategory: Category.ELECTRONICS.toString(),
+                itemCategory: Category.ELECTRONICS,
                 itemName: 'testItem',
                 itemImages: [
                     '0',
@@ -122,7 +122,7 @@ describe('POST /api/item/add-item', () => {
             .post('/api/item/add-item')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
-                itemCategory: Category.ELECTRONICS.toString(),
+                itemCategory: Category.ELECTRONICS,
                 itemName: 'testItem',
                 itemImages: [
                     '0',
