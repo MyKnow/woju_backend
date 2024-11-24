@@ -55,7 +55,7 @@ exports.getAdminToken = (req, res) => {
   }
 
   // 관리자 토큰 발급
-  const token = generateToken('ADMIN', { adminID: 'admin' });
+  const token = generateToken('ADMIN', { adminID: adminID });
 
   return res.status(200).json({ jwt: token });
 };
