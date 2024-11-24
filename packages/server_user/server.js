@@ -81,7 +81,6 @@ connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI) // item DB 연결
 app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청은 userRoutes 라우터로 전달됩니다.
 app.use('/api/service', serviceRoutes); // "/api/service" 경로로 시작하는 요청은 serviceRoutes 라우터로 전달됩니다.
 app.use('/api/policy', policyRoutes); // "/api/policy" 경로로 시작하는 요청은 policyRoutes 라우터로 전달됩니다.
-app.use('/api/item', itemRoutes); // "/api/item" 경로로 시작하는 요청은 itemRoutes 라우터로 전달됩니다.
 
 // 글로벌 에러 핸들러 추가 (라우터 설정 후, 서버 실행 전)
 app.use((err, req, res, next) => {
