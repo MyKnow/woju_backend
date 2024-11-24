@@ -9,8 +9,8 @@ const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils
 const { comparePassword } = require('../../packages/shared/utils/crypto');
 
 // 필요한 Model 불러오기
-const { createTempPhoneNumberModel } = require('../../packages/server_user/models/tempPhoneNumberModel');
-const { createTempUserIDModel } = require('../../packages/server_user/models/tempUserIDModel');
+const { createTempPhoneNumberModel } = require('../../packages/shared/models/tempPhoneNumberModel');
+const { createTempUserIDModel } = require('../../packages/shared/models/tempUserIDModel');
 const { createUserModel, getTestSignUpUserData, getTestSignInUserData, getTestUpdateUserData, getTestPhoneNumberUpdateData } = require('../../packages/shared/models/userModel');
 const { FailureReason } = require('../../packages/shared/models/responseModel');
 const { createPolicyModel, PolicyType, CountryType } = require('../../packages/server_user/models/policyModel');

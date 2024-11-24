@@ -7,9 +7,9 @@ const { logger } = require('../../shared/utils/logger');  // 로거 불러오기
 // 필요한 모델 불러오기
 const { PolicyType, CountryType } = require('../models/policyModel'); // 이용 약관 모델 불러오기
 const { FailureReason } = require('../../shared/models/responseModel');  // 응답 실패 이유 불러오기
-const { createTempUserIDModel } = require('../../shared/services/tempUserIDModel'); // 임시로 아이디를 저장하는 모델
+const { createTempUserIDModel } = require('../../shared/models/tempUserIDModel'); // 임시로 아이디를 저장하는 모델
 const { createUserModel } = require('../../shared/models/userModel'); // 최종적으로 사용자 정보를 저장하는 모델
-const { createTempPhoneNumberModel } = require('../../shared/services/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
+const { createTempPhoneNumberModel } = require('../../shared/models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 
 // 필요한 서비스 불러오기
 const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
