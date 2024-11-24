@@ -3,6 +3,7 @@
 // 필요한 Util 불러오기
 const { isMongoDBConnected } = require('../../shared/utils/db');
 const { generateToken, } = require('../../shared/utils/auth');
+const { id } = require('date-fns/locale');
 
 /** DB 연결 상태 확인 API
  * 
@@ -28,15 +29,18 @@ exports.status = (req, res) => {
 };
 
 /**
+ * # 관리자 토큰 발급 API
  * @name getAdminToken
- * @description 관리자 토큰 발급 API
  * 
- * @param {Object} req - Request 객체
+ * ## Params
+ * @param {string} req.body.adminID - 관리자 아이디
+ * @param {string} req.body.adminPW - 관리자 비밀번호
  * @param {Object} res - Response 객체
  * 
- * @returns {Object} - 200({jwt}) - 관리자 토큰 발급
- * @returns {Object} - 400 - 아이디 또는 비밀번호가 일치하지 않음
- * @returns {Object} - 500 - 서버 에러
+ * ## Returns
+ * @returns {Object} 200({jwt}) : 관리자 토큰 발급
+ * @returns {Object} 400 : 아이디 또는 비밀번호가 일치하지 않음
+ * @returns {Object} 500 : 서버 에러
  */
 exports.getAdminToken = (req, res) => {
   const { adminID, adminPW } = req.body;
@@ -50,8 +54,12 @@ exports.getAdminToken = (req, res) => {
   const correctID = process.env.ADMIN_ID;
   const correctPW = process.env.ADMIN_PW;
   
-  if (adminID !== correctID || adminPW !== correctPW) {
-    return res.status(400).json({ message: '아이디 또는 비밀번호가 일치하지 않습니다.' });
+  // 테스트용 관리자 아이디와 비밀번호 확인
+  if (adminID !== correctID) {
+    return res.status(400).json({ message: '아이디가 일치하지 않습니다.', id: adminID });
+  }
+  if (adminPW !== correctPW) {
+    return res.status(400).json({ message: '비밀번호가 일치하지 않습니다.', pw: adminPW });
   }
 
   // 관리자 토큰 발급
