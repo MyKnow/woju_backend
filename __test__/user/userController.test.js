@@ -1,30 +1,27 @@
-// __tests__/userController.test.js
+// __tests__/user/userController.test.js
 
 // 필요한 Library 불러오기
 const request = require('supertest');
 const express = require('express');
 
 // 필요한 Util 불러오기
-const { connectDB, disconnectDB } = require('../packages/shared/utils/db');
-const { comparePassword } = require('../packages/shared/utils/crypto');
+const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
+const { comparePassword } = require('../../packages/shared/utils/crypto');
 
 // 필요한 Model 불러오기
-const TempPhoneNumber = require('../packages/server_user/models/tempPhoneNumberModel');
-const TempUserID = require('../packages/server_user/models/tempUserIDModel');
-const { SignupUser, getTestSignUpUserData, getTestSignInUserData, getTestUpdateUserData, getTestPhoneNumberUpdateData } = require('../packages/shared/models/userModel');
-const userRoutes = require('../packages/server_user/routes/userRoutes');
-const { FailureReason } = require('../packages/shared/models/responseModel');
-const { Policy, PolicyType, CountryType } = require('../packages/server_user/models/policyModel');
+const { createTempPhoneNumberModel } = require('../../packages/server_user/models/tempPhoneNumberModel');
+const { createTempUserIDModel } = require('../../packages/server_user/models/tempUserIDModel');
+const { createUserModel, getTestSignUpUserData, getTestSignInUserData, getTestUpdateUserData, getTestPhoneNumberUpdateData } = require('../../packages/shared/models/userModel');
+const { FailureReason } = require('../../packages/shared/models/responseModel');
+const { createPolicyModel, PolicyType, CountryType } = require('../../packages/server_user/models/policyModel');
+
+// 필요한 Router 불러오기
+const userRoutes = require('../../packages/server_user/routes/userRoutes');
 
 // 테스트용 Express 앱 설정
 const app = express();
 app.use(express.json());
 app.use('/api/user', userRoutes);
-
-// 테스트 시작 전 MongoDB 메모리 서버 시작
-beforeAll(async () => {
-  await connectDB(); // 테스트 시작 전 DB 연결
-});
 
 // 테스트 종료 후 MongoDB 연결 해제 및 메모리 서버 종료
 afterAll(async () => {
@@ -32,6 +29,25 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  // DB 연결
+  const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+  const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+
+  if (!userDB) {
+    console.error('Error connecting to User DB');
+    return;
+  }
+
+  if (!policyDB) {
+    console.error('Error connecting to Policy DB');
+    return;
+  }
+
+  const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+  const TempUserID = createTempUserIDModel(userDB);
+  const SignupUser = createUserModel(userDB);
+  const Policy = createPolicyModel(policyDB);
+
   // 테스트 전 TempPhoneNumber, SignupUser 컬렉션 초기화
   await TempPhoneNumber.deleteMany({});
   await TempUserID.deleteMany({});
@@ -48,6 +64,16 @@ describe('checkPhoneNumberAvailable', () => {
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
     // TempPhoneNumber에 해당 전화번호와 testDeviceID가 저장되었는지 확인
     const tempEntry = await TempPhoneNumber.findOne({ userPhoneNumber: '1234567890' });
     expect(tempEntry).not.toBeNull();
@@ -55,6 +81,16 @@ describe('checkPhoneNumberAvailable', () => {
   });
 
   it('이미 TempPhoneNumber에 등록된 전화번호의 경우, 사용 불가 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
     await TempPhoneNumber.create({ userDeviceID: 'anotherDeviceID', userPhoneNumber: '1234567890' , dialCode: '+82', isoCode: 'KR'});
 
     const response = await request(app)
@@ -66,6 +102,16 @@ describe('checkPhoneNumberAvailable', () => {
   });
 
   it('이미 TempPhoneNumber에 등록된 전화번호를 최초 User가 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
     await TempPhoneNumber.create({ userDeviceID: 'testDeviceIDForSuccess', userPhoneNumber: '0123456789' , dialCode: '+82', isoCode: 'KR'});
 
     const response = await request(app)
@@ -77,6 +123,16 @@ describe('checkPhoneNumberAvailable', () => {
   });
 
   it('동일한 전화번호로 최초 User가 연속해서 2번 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
     // TempPhoneNumber에 유저 정보 저장
     await TempPhoneNumber.create({ userDeviceID: 'testDeviceID', userPhoneNumber: '1234567890', dialCode: '+82', isoCode: 'KR' });
 
@@ -184,6 +240,16 @@ describe('checkUserIDAvailable', () => {
     expect(response.status).toBe(200);
     expect(response.body.isAvailable).toBe(true);
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempUserID = createTempUserIDModel(userDB);
+
     // TempUserID에 해당 아이디과 UID가 저장되었는지 확인
     const tempEntry = await TempUserID.findOne({ userID: 'testUserID' });
     expect(tempEntry).not.toBeNull();
@@ -191,6 +257,16 @@ describe('checkUserIDAvailable', () => {
   });
 
   it('이미 TempUserID에 등록된 아이디의 경우, 사용 불가 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempUserID = createTempUserIDModel(userDB);
+
     await TempUserID.create({ userUID: 'anotherUID', userID: 'testUserID' });
 
     const response = await request(app)
@@ -202,6 +278,16 @@ describe('checkUserIDAvailable', () => {
   });
 
   it('이미 TempUserID에 등록된 아이디를 최초 User가 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempUserID = createTempUserIDModel(userDB);
+
     await TempUserID.create({ userUID: 'testUIDForSuccess', userID: 'testUserID' });
 
     const response = await request(app)
@@ -213,6 +299,16 @@ describe('checkUserIDAvailable', () => {
   });
 
   it('동일한 아이디으로 최초 User가 연속해서 2번 요청할 경우, 사용 가능 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempUserID = createTempUserIDModel(userDB);
+
     // TempUserID에 유저 정보 저장
     await TempUserID.create({ userUID: 'testUID', userID: 'testUserID' });
 
@@ -297,6 +393,16 @@ describe('signupUser', () => {
   });
 
   it('회원가입을 성공하면, 회원 정보가 DB에 저장되어야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const response = await request(app)
       .post('/api/user/signup')
       .send(getTestSignUpUserData(1));
@@ -314,19 +420,47 @@ describe('signupUser', () => {
     delete modifiedUserData.termsVersion;
     delete modifiedUserData.privacyVersion;
 
-    Policy.create({ type: PolicyType.TermsOfService, country: CountryType.KR, version: '1.0.0', content: 'test' });
-    Policy.create({ type: PolicyType.PrivacyPolicy, country: CountryType.KR, version: '1.0.0', content: 'test' });
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+    if (!policyDB) {
+      console.error('Error connecting to Policy DB');
+      return;
+    }
+
+    const Policy = createPolicyModel(policyDB);
+    const SignupUser = createUserModel(userDB);
+
+    await Policy.create({ type: PolicyType.TermsOfService, country: CountryType.KR, version: '1.0.0', content: 'test' });
+    await Policy.create({ type: PolicyType.PrivacyPolicy, country: CountryType.KR, version: '1.0.0', content: 'test' });
 
     const response = await request(app).post('/api/user/signup').send(modifiedUserData);
+
     expect(response.status).toBe(200);
 
     const user = await SignupUser.findOne({ userID: modifiedUserData.userID });
+
     expect(user).not.toBeNull();
     expect(user.termsVersion).toBe('1.0.0');
     expect(user.privacyVersion).toBe('1.0.0');
   });
 
   it('이미 TempPhoneNumber에 등록된 전화번호로 회원가입 요청을 보낸 경우, userDeviceID가 다르다면 사용 불가 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
     await TempPhoneNumber.create({ 
       userDeviceID: getTestSignUpUserData(1).userDeviceID, 
       userPhoneNumber: getTestSignUpUserData(2).userPhoneNumber , 
@@ -342,6 +476,16 @@ describe('signupUser', () => {
   });
 
   it('이미 TempUserID에 등록된 아이디로 회원가입 요청을 보낸 경우, userUID가 다르다면 사용 불가 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempUserID = createTempUserIDModel(userDB);
+
     await TempUserID.create({ 
       userUID: getTestSignUpUserData(1).userUID, 
       userID: getTestSignUpUserData(2).userID 
@@ -367,6 +511,17 @@ describe('signupUser', () => {
   });
 
   it('회원가입 요청이 정상적으로 처리되면, TempPhoneNumber, TempUserID에 저장된 정보가 삭제되어야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const TempUserID = createTempUserIDModel(userDB);
+    const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
     await TempPhoneNumber.create({ 
       userDeviceID: getTestSignUpUserData(1).userDeviceID, 
       userPhoneNumber: getTestSignUpUserData(1).userPhoneNumber, 
@@ -399,6 +554,16 @@ describe('signupUser', () => {
 
     expect(response.status).toBe(200);
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const user = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
 
     expect(user).not.toBeNull();
@@ -429,6 +594,22 @@ describe('signupUser', () => {
   });
 
   it('국가 코드가 한국이 아닌 경우, 약관 버전이 없을 때 US의 약관 버전으로 회원가입이 가능해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+    if (!policyDB) {
+      console.error('Error connecting to Policy DB');
+      return;
+    }
+
+    const Policy = createPolicyModel(policyDB);
+    const SignupUser = createUserModel(userDB);
+
     Policy.create({ type: PolicyType.TermsOfService, country: CountryType.US, version: '1.0.0', content: 'test' });
     Policy.create({ type: PolicyType.PrivacyPolicy, country: CountryType.US, version: '1.0.0', content: 'test' });
     Policy.create({ type: PolicyType.TermsOfService, country: CountryType.KR, version: '1.0.1', content: 'test' });
@@ -471,6 +652,17 @@ describe('signupUser', () => {
 describe('loginUser', () => {
   it('등록된 사용자 정보로 로그인 요청을 보낸 경우, 로그인이 정상적으로 처리되어야 한다.', async () => {
     await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     expect(await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID })).not.toBeNull();
 
     const response = await request(app).post('/api/user/login').send(getTestSignInUserData(1));
@@ -488,6 +680,8 @@ describe('loginUser', () => {
 
     const {userPassword, ...signInData} = getTestSignInUserData(1);
     const response = await request(app).post('/api/user/login').send(signInData);
+
+    expect(response.status).toBe(400);
   });
 
   it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
@@ -546,6 +740,16 @@ describe('withdrawUser', () => {
   });
 
   it('등록된 사용자 정보로 탈퇴 요청을 보낸 경우, 탈퇴 후 사용자 정보가 삭제되어야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
 
     await request(app).post('/api/user/withdraw').send({ userID: getTestSignUpUserData(1).userID, userPassword: getTestSignUpUserData(1).userPassword });
@@ -583,6 +787,16 @@ describe('update-user-password', () => {
     const response = await request(app).post('/api/user/update-user-password').send({ userID: getTestSignUpUserData(1).userID, oldPassword: getTestSignUpUserData(1).userPassword, newPassword: getTestSignUpUserData(2).userPassword });
 
     expect(response.status).toBe(200);
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
 
     const user = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
 
@@ -626,6 +840,16 @@ describe('reset-user-password', () => {
 
     expect(response.status).toBe(200);
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const user = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
 
     expect(user).not.toBeNull();
@@ -667,6 +891,16 @@ describe('checkUserExist', () => {
 
 describe('update-user-info', () => {
   it('등록된 사용자 정보로 정보 수정 요청을 보낸 경우, 정보 수정이 정상적으로 처리되어야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
 
     const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
@@ -694,6 +928,16 @@ describe('update-user-info', () => {
   });
 
   it('비밀번호가 일치하지 않는 경우, 에러 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
     expect(response.status).toBe(200);
 
@@ -734,6 +978,16 @@ describe('update-user-info', () => {
     const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
     expect(response.status).toBe(200);
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
 
     const termsUpdate =  {
@@ -767,6 +1021,16 @@ describe('update-user-info', () => {
   });
 
   it('약관 버전이 현재 버전보다 낮은 경우, 에러 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
     expect(response.status).toBe(200);
 
@@ -810,6 +1074,16 @@ describe('update-user-info', () => {
     const responseAnotherUser = await request(app).post('/api/user/signup').send(getTestSignUpUserData(2));
     expect(responseAnotherUser.status).toBe(200);
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
 
     const phoneNumberUpdate =  {
@@ -844,6 +1118,16 @@ describe('update-user-info', () => {
   });
 
   it('아이디가 중복된 경우, 에러 응답을 반환해야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
     expect(response.status).toBe(200);
 
@@ -898,6 +1182,16 @@ describe('update-user-info', () => {
 
 describe('update-user-phonenumber', () => {
   it('등록된 사용자 정보로 전화번호 수정 요청을 보낸 경우, 전화번호 수정이 정상적으로 처리되어야 한다.', async () => {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const signUpResult = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
     expect(signUpResult.status).toBe(200);
 
@@ -931,6 +1225,16 @@ describe('update-user-phonenumber', () => {
     const response = await request(app).post('/api/user/signup').send(getTestSignUpUserData(1));
 
     expect(response.status).toBe(200);
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const SignupUser = createUserModel(userDB);
 
     const userBeforeUpdate = await SignupUser.findOne({ userID: getTestSignUpUserData(1).userID });
 

@@ -1,5 +1,10 @@
 // services/policyService.js
-const { Policy, PolicyType, CountryType } = require('../models/policyModel');
+
+// 필요한 모델 불러오기
+const { createPolicyModel, PolicyType, CountryType } = require('../models/policyModel');
+
+// 필요한 Utils 불러오기
+const { connectDB, DBType } = require('../../shared/utils/db');
 
 /** # 이용 약관 내용을 조회하는 비동기 함수
  * 
@@ -15,6 +20,14 @@ const { Policy, PolicyType, CountryType } = require('../models/policyModel');
  * 
  */
 const getPolicyContentService = async (type, version, country) => {
+  // DB 연결
+  const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+  if (!db) {
+    return res.status(500).json({ message: 'DB 연결 실패' });
+  }
+
+  const Policy = createPolicyModel(db);
+
     if (version) {
         return await Policy.findOne({ type, country, version });
     } else {

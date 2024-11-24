@@ -1,19 +1,25 @@
 // controllers/userController.js
 
-const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리 불러오기
+// 필요한 라이브러리 불러오기
+const { v4: uuidv4 } = require('uuid'); // UUID 생성을 위한 라이브러리
+const { logger } = require('../../shared/utils/logger');  // 로거 불러오기
 
 // 필요한 모델 불러오기
-const TempPhoneNumber = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
-const TempUserID = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
-const { SignupUser } = require('../../shared/models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
-const { hashPassword, comparePassword } = require('../../shared/utils/crypto');  // 비밀번호 해시화 및 비교 함수 불러오기
-const { FailureReason } = require('../../shared/models/responseModel');  // 응답 실패 이유 불러오기
-
-const { checkPhoneNumberAvailableService, checkUserIDAvailableService } = require('../services/userService');  // 전화번호 중복 확인 함수 불러오기
-const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
 const { PolicyType, CountryType } = require('../models/policyModel'); // 이용 약관 모델 불러오기
+const { FailureReason } = require('../../shared/models/responseModel');  // 응답 실패 이유 불러오기
+const { createTempUserIDModel } = require('../models/tempUserIDModel'); // 임시로 아이디를 저장하는 모델
+const { createUserModel } = require('../../shared/models/userModel'); // 최종적으로 사용자 정보를 저장하는 모델
+const { createTempPhoneNumberModel } = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
 
-const { logger } = require('../../shared/utils/logger');  // 로거 불러오기
+// 필요한 서비스 불러오기
+const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
+const { checkPhoneNumberAvailableService, checkUserIDAvailableService } = require('../services/userService');  // 전화번호 중복 확인 함수 불러오기
+
+// 필요한 Util 불러오기
+const { generateToken } = require('../../shared/utils/auth');  // JWT 토큰 생성 함수 불러오기
+const { connectDB, isMongoDBConnected, DBType } = require('../../shared/utils/db');  // DB 연결 함수 불러오기
+const { hashPassword, comparePassword } = require('../../shared/utils/crypto');  // 비밀번호 해시화 및 비교 함수 불러오기
+
 
 /** # 전화번호 중복 확인 API
  * 
@@ -170,6 +176,17 @@ exports.signupUser = async (req, res) => {
         privacySignUpVersion = privacyVersion;
       }
 
+      // DB 연결
+      const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+      if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+        return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+      }
+
+      const SignupUser = createUserModel(userDB);
+      const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+      const TempUserID = createTempUserIDModel(userDB);
+
       // 사용자 정보 저장
       await SignupUser.create({
         userUUID: uuidv4(),
@@ -193,8 +210,7 @@ exports.signupUser = async (req, res) => {
       await TempUserID.deleteOne({ userID: userID });
 
       return res.status(200).json({ isSuccess: true });
-    }
-    else if  (!phoneCheck.isAvailable) {
+    } else if  (!phoneCheck.isAvailable) {
       // 사용자 정보 저장 실패 : 중복된 전화번호
       return res.status(400).json({ isSuccess: false, failureReason: FailureReason.PHONENUMBER_NOT_AVAILABLE, message: '해당 전화번호는 이미 사용 중입니다.' });
     } else if (!idCheck.isAvailable) {
@@ -243,6 +259,15 @@ exports.loginUser = async (req, res) => {
 
     let user = null;
 
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     // 둘 중 하나만 있는 경우, 해당 정보로 사용자 정보 조회
     if (userPhoneNumber && userPhoneNumber.trim() !== '' && dialCode && dialCode.trim() !== '') {
        user = await SignupUser.findOne({ userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode });
@@ -264,9 +289,15 @@ exports.loginUser = async (req, res) => {
       // 마지막 로그인 시간과 장치 ID 업데이트
       await SignupUser.updateOne({ userID: user.userID }, { lastLoginAt: Date.now(), userDeviceID: userDeviceID });
 
+      // JWT 토큰 생성
+      const token = generateToken("USER", user.userUUID);
+
       // user에서 password 필드만 제거한 객체를 생성하여 응답
       const { userPassword, ...userInfo } = user._doc;
-      return res.status(200).json({ userInfo });
+      return res.status(200).json({ 
+        userInfo: userInfo,
+        token: token,
+       });
     } else {
       return res.status(400).json({ failureReason: FailureReason.PASSWORD_NOT_MATCH, message: '비밀번호가 일치하지 않습니다.' });
     }
@@ -292,6 +323,14 @@ exports.withdrawUser = async (req, res) => {
   const {  userID, userPassword } = req.body;
 
   try {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
     const user = await SignupUser.findOne({ userID: userID });
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답
@@ -337,6 +376,15 @@ exports.updateUserPassword = async (req, res) => {
   const { userID, oldPassword, newPassword } = req.body;
 
   try {
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
+    
     const user = await SignupUser.findOne({ userID: userID });
 
     if (!user) {
@@ -382,6 +430,16 @@ exports.resetUserPassword = async (req, res) => {
   const { userUID, userPhoneNumber, dialCode, isoCode, newPassword } = req.body;
 
   try {
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const user = await SignupUser.findOne({ userUID: userUID, userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode });
 
     if (!newPassword || newPassword.trim() === '') {
@@ -424,6 +482,16 @@ exports.checkUserExists = async (req, res) => {
   const { userUID } = req.body;
 
   try {
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
+    
     const user = await SignupUser.findOne({ userUID: userUID });
 
     if (!user) {
@@ -464,6 +532,16 @@ exports.updateUserInfo = async (req, res) => {
   const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword, termsVersion, privacyVersion } = req.body;
 
   try {
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const user = await SignupUser.findOne({ userUUID: userUUID });
 
     if (!userPassword || userPassword.trim() === '') {
@@ -565,6 +643,16 @@ exports.updateUserPhoneNumber = async (req, res) => {
   const { userUUID, userUID, userPhoneNumber, dialCode, isoCode, userPassword } = req.body;
 
   try {
+
+    // DB 연결
+    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+    if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+      return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
+    }
+
+    const SignupUser = createUserModel(userDB);
+
     const user = await SignupUser.findOne({ userUUID: userUUID });
 
     // 비밀번호가 없는 경우, 비밀번호를 입력해달라고 응답

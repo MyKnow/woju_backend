@@ -1,27 +1,50 @@
 // __test__/db.test.js
 
-const { connectDB, disconnectDB } = require('../packages/shared/utils/db');
+const { isAfter } = require('date-fns');
+const mongoose = require('mongoose');
+const { connectDB, disconnectDB, isMongoDBConnected } = require('../packages/shared/utils/db');
+
 
 describe('DB Utility Test', () => {
+    afterAll(async () => {
+        await disconnectDB("User");
+        await disconnectDB("Item");
+
+        await mongoose.disconnect();
+        await mongoose.connection.close();
+    });
+
     // process.env.NODE_ENV === 'test'일 때 테스트
-    test('DB 연결 테스트 (테스트 환경)', async () => {
+    it('DB 연결 테스트 (테스트 환경)', async () => {
         process.env.NODE_ENV = 'test';
 
-        const result = await connectDB();
-        expect(result).toBe(true);
+        await connectDB("User", process.env.MONGO_USER_DB_URI)
+        expect(isMongoDBConnected("User")).toBeTruthy();
 
-        const disconnectResult = await disconnectDB();
-        expect(disconnectResult).toBe(true);
+        await connectDB("Item", process.env.MONGO_ITEM_DB_URI);
+        expect(isMongoDBConnected("Item")).toBeTruthy();
+
+        await disconnectDB("User");
+        await disconnectDB("Item");
+
+        expect(isMongoDBConnected("User")).toBe(false);
+        expect(isMongoDBConnected("Item")).toBe(false);
     });
 
     // process.env.NODE_ENV === 'test' 아닐 때 테스트
-    test('DB 연결 테스트 (프로덕션 환경)', async () => {
+    it('DB 연결 테스트 (프로덕션 환경)', async () => {
         process.env.NODE_ENV = 'production';
 
-        const result = await connectDB();
-        expect(result).toBe(true);
+        await connectDB("User", process.env.MONGO_USER_DB_URI);
+        expect(isMongoDBConnected("User")).toBeTruthy();
 
-        const disconnectResult = await disconnectDB();
-        expect(disconnectResult).toBe(true);
+        await connectDB("Item", process.env.MONGO_ITEM_DB_URI);
+        expect(isMongoDBConnected("Item")).toBeTruthy();
+
+        await disconnectDB("User");
+        await disconnectDB("Item");
+
+        expect(isMongoDBConnected("User")).toBe(false);
+        expect(isMongoDBConnected("Item")).toBe(false);
     });
 });

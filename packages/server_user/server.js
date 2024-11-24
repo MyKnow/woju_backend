@@ -1,6 +1,6 @@
 // server.js
 const express = require('express');
-const { connectDB } = require('../shared/utils/db'); // DB 연결 로직
+const { connectUserDB } = require('../shared/utils/db'); // DB 연결 로직
 const userRoutes = require('./routes/userRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const policyRoutes = require('./routes/policyRoutes');
@@ -12,7 +12,7 @@ const morgan = require('morgan');
 // Express 앱 생성
 const app = express();
 const { logger, httpLogger } = require('../shared/utils/logger');
-
+ 
 // 로깅 미들웨어들을 라우터보다 먼저 설정
 app.use(httpLogger);
 app.use((req, res, next) => {
@@ -48,7 +48,9 @@ app.use(express.json({limit: '10mb'}));
 app.use(morgan('combined'));
 
 // 연결 성공 시 콘솔에 출력
-connectDB();
+connectUserDB().then(() => {
+  console.log('Connected to MongoDB');
+});
 
 // 라우터 설정
 app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청은 userRoutes 라우터로 전달됩니다.

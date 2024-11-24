@@ -1,8 +1,13 @@
 // controllers/policyController.js
 
 // 필요한 모델 불러오기
-const { Policy } = require('../models/policyModel');
+const { createPolicyModel } = require('../models/policyModel');
+
+// 필요한 Utils 불러오기
 const { verifyAdmin } = require('../../shared/utils/auth');  // 미들웨어 불러오기
+const { connectDB, disconnectDB, DBType } = require('../../shared/utils/db');  // DB 연결 끊기
+
+// 필요한 Service 불러오기
 const { getPolicyContentService, isValidPolicyType, isValidCountryType  } = require('../services/policyService');
 
 /** # 이용 약관 내용 GET API
@@ -84,6 +89,14 @@ exports.addPolicyContent = [
       return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
 
+    // DB 연결
+    const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+    if (!db) {
+      return res.status(500).json({ message: 'DB 연결 실패' });
+    }
+
+    const Policy = createPolicyModel(db);
+
     // 중복 여부 확인
     const existingPolicy = await Policy.findOne({ version, type, country });
     if (existingPolicy) {
@@ -137,6 +150,15 @@ exports.updatePolicyContent = [
       return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
 
+
+    // DB 연결
+    const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+    if (!db) {
+      return res.status(500).json({ message: 'DB 연결 실패' });
+    }
+
+    const Policy = createPolicyModel(db);
+
     const policy = await Policy.findOne({ version, type, country });
 
     if (!policy) {
@@ -186,6 +208,15 @@ exports.deletePolicyContent = [
     if (!isValidPolicyType(type) || !isValidCountryType(country)) {
       return res.status(406).json({ message: 'type, country 값이 올바르지 않습니다.' });
     }
+
+
+    // DB 연결
+    const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+    if (!db) {
+      return res.status(500).json({ message: 'DB 연결 실패' });
+    }
+
+    const Policy = createPolicyModel(db);
 
     const result = await Policy.deleteOne({ version, type, country });
 

@@ -1,25 +1,24 @@
+// __test__/user/policyController.test.js
+
+// 필요한 Library를 불러옵니다.
 const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
-const { connectDB, disconnectDB } = require('../packages/shared/utils/db');
-const policyRoutes = require('../packages/server_user/routes/policyRoutes');
-const { Policy, PolicyType, CountryType } = require('../packages/server_user/models/policyModel');
+// 필요한 Util을 불러옵니다.
+const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
+const { generateToken } = require('../../packages/shared/utils/auth');
+
+// 필요한 Routes를 불러옵니다.
+const policyRoutes = require('../../packages/server_user/routes/policyRoutes');
+
+// 필요한 Model을 불러옵니다.
+const { createPolicyModel, PolicyType, CountryType } = require('../../packages/server_user/models/policyModel');
 
 // 테스트용 Express 앱 설정
 const app = express();
 app.use(express.json());
 app.use('/api/policy', policyRoutes);
-
-// JWT 토큰 생성 함수
-const generateToken = (role = 'USER') => {
-  return jwt.sign({ role }, process.env.JWT_SECRET || 'testsecret', { expiresIn: '1h' });
-};
-
-// 테스트 시작 전 DB 연결
-beforeAll(async () => {
-  await connectDB();
-});
 
 // 테스트 종료 후 DB 연결 해제
 afterAll(async () => {
@@ -28,6 +27,16 @@ afterAll(async () => {
 
 // 각 테스트 실행 전 DB 상태 초기화
 beforeEach(async () => {
+    // DB 연결
+    const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+  
+    if (!policyDB) {
+      console.error('Error connecting to User DB');
+      return;
+    }
+
+    const Policy = createPolicyModel(policyDB); 
+
     await Policy.deleteMany({}); // 테스트 전에 DB의 모든 정책을 삭제하여 초기화
 });
 
@@ -35,6 +44,16 @@ describe('정책 관련 API 테스트', () => {
     // GET 테스트
     describe('GET /policy/terms', () => {
         it('정상적으로 나라별 약관을 가져온다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ type: PolicyType.PrivacyPolicy, version: '1.0.0', content: '테스트 약관 내용', country: CountryType.KR });
     
             const response = await request(app).get(`/api/policy/terms?type=${PolicyType.PrivacyPolicy}&version=1.0.0&country=${CountryType.KR}`);
@@ -44,6 +63,16 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('버전을 명시하지 않으면 최신 버전을 가져온다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+            
             await Policy.create({ type: PolicyType.PrivacyPolicy, version: '1.0.0', content: '테스트 약관 내용', country: CountryType.KR });
             await Policy.create({ type: PolicyType.PrivacyPolicy, version: '2.0', content: '테스트 약관 내용 2.0', country: CountryType.KR });
 
@@ -85,6 +114,17 @@ describe('정책 관련 API 테스트', () => {
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ version: '1.0.0', type: PolicyType.PrivacyPolicy, content: '테스트 개인정보 처리방침 추가', country: CountryType.KR });
             expect(responseOfPrivacy.statusCode).toBe(200);
+
+
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
     
             const policy = await Policy.findOne({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
             expect(policy).not.toBeNull();
@@ -121,13 +161,24 @@ describe('정책 관련 API 테스트', () => {
 
             expect(response.statusCode).toBe(402);
 
+
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             const policy = await Policy.findOne({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
 
             expect(policy).toBeNull();
         });
 
         it('일반 사용자가 요청하면 403을 반환한다.', async () => {
-            const userToken = generateToken('USER');
+            const userToken = generateToken(DBType.POLICY);
     
             const response = await request(app)
             .post('/api/policy/terms')
@@ -143,11 +194,32 @@ describe('정책 관련 API 테스트', () => {
             const response = await request(app).post('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: 'invalid', content: '테스트 약관 추가', country: 'invalid' });
             expect(response.statusCode).toBe(406);
 
+
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             const policy = await Policy.findOne({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
             expect(policy).toBeNull();
         });
 
         it('이미 존재하는 약관을 추가하면 409를 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
             const adminToken = generateToken('ADMIN');
@@ -164,6 +236,16 @@ describe('정책 관련 API 테스트', () => {
     // PUT 테스트
     describe('PUT /policy/terms', () => {
         it('ADMIN이 나라별로 약관을 수정한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
             const adminToken = generateToken('ADMIN');
@@ -186,6 +268,16 @@ describe('정책 관련 API 테스트', () => {
 
             expect(response.statusCode).toBe(400);
 
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             const policy = await Policy.findOne({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
 
             expect(policy).toBeNull();
@@ -193,6 +285,16 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('ADMIN이 없으면 401을 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
             const response = await request(app)
@@ -203,6 +305,16 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('유요하지 않은 토큰이면 402를 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
             
             const adminToken = generateToken('ADMIN');
@@ -217,7 +329,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('일반 사용자가 요청하면 403을 반환한다.', async () => {
-            const userToken = generateToken('USER');
+            const userToken = generateToken(DBType.POLICY);
     
             const response = await request(app)
             .put('/api/policy/terms')
@@ -244,6 +356,16 @@ describe('정책 관련 API 테스트', () => {
             const response = await request(app).put('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: 'invalid', content: '수정된 약관', country: 'invalid' });
             expect(response.statusCode).toBe(406);
 
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             const policy = await Policy.findOne({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
             expect(policy).toBeNull();
         });
@@ -252,6 +374,16 @@ describe('정책 관련 API 테스트', () => {
     // DELETE 테스트
     describe('DELETE /policy/terms', () => {
         it('ADMIN이 나라별로 약관을 삭제한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
             const adminToken = generateToken('ADMIN');
@@ -269,6 +401,16 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('요청 바디가 올바르지 않으면 400을 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
 
             const adminToken = generateToken('ADMIN');
@@ -285,6 +427,16 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('ADMIN이 없으면 401을 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
             const response = await request(app)
@@ -298,6 +450,16 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('유효하지 않은 토큰이면 402를 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
 
             const adminToken = generateToken('ADMIN');
@@ -312,9 +474,19 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('일반 사용자가 요청하면 403을 반환한다.', async () => {
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
+
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
 
-            const userToken = generateToken('USER');
+            const userToken = generateToken(DBType.POLICY);
     
             const response = await request(app)
             .delete('/api/policy/terms')
@@ -343,6 +515,16 @@ describe('정책 관련 API 테스트', () => {
 
             const response = await request(app).delete('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: 'invalid', country: 'invalid' });
             expect(response.statusCode).toBe(406);
+
+            // DB 연결
+            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+          
+            if (!policyDB) {
+              console.error('Error connecting to User DB');
+              return;
+            }
+        
+            const Policy = createPolicyModel(policyDB); 
 
             const policy = await Policy.findOne({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
             expect(policy).toBeNull();

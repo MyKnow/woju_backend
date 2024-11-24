@@ -1,6 +1,9 @@
 // models/policyModel.js
 const mongoose = require('mongoose');
 
+// 필요한 Util 불러오기
+const { DBName } = require('../../shared/utils/db');
+
 /** Type enum
  * 
  * @typedef {Object} PolicyType
@@ -54,10 +57,27 @@ const policySchema = new mongoose.Schema({
 // version이 동일하더라도 type과 country가 다르면 다른 문서로 취급
 policySchema.index({ version: 1, type: 1, country: 1 }, { unique: true });
 
-const Policy = mongoose.model('Policy', policySchema);
+/**
+ * @name createPolicyModel
+ * @description Policy 모델 생성 함수
+ * 
+ * @param {mongoose.Connection} db - DB Connection
+ * @returns {mongoose.Model} - Policy Model
+ */
+const createPolicyModel = (db) => {
+  if (!db) {
+    throw new Error('DB 연결이 필요합니다.');
+  }
+
+  if (db.models[DBName.POLICY]) {
+    return db.models[DBName.POLICY];
+  }
+
+  return db.model(DBName.POLICY, policySchema);
+}
 
 module.exports = {
-  Policy,
+  createPolicyModel,
   PolicyType,
   CountryType,
 };

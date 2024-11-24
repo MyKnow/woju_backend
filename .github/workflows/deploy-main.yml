@@ -13,7 +13,7 @@ jobs:
       matrix:
         server:
           - server_user
-          # - server_item
+          - server_item
 
     steps:
       - name: Checkout repository

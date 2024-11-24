@@ -1,4 +1,11 @@
+// packages/shared/models/userModel.js
+
+// 필요한 라이브러리 불러오기
 const mongoose = require('mongoose');
+
+// 필요한 Util 불러오기
+const { generateToken } = require('../utils/auth');
+const { DBName } = require('../../shared/utils/db');
 
 // 상수로 고정된 기본값 정의
 const DEFAULT_GENDER = 'private';
@@ -27,7 +34,19 @@ const userSchema = new mongoose.Schema({
   lastPasswordUpdateAt: { type: Date, default: Date.now },    // 마지막 비밀번호 변경일
 });
 
-const SignupUser = mongoose.model('SignupUser', userSchema);
+/**
+ * @name createUserModel
+ * @description 사용자 모델 생성 함수
+ * 
+ * @param {mongoose.Connection} db 
+ * @returns {mongoose.Model} 생성된 사용자 모델
+ */
+const createUserModel = (db) => {
+  if (db.modelNames().includes(DBName.USER)) {
+    return db.model(DBName.USER);
+  }
+  return db.model(DBName.USER, userSchema);
+};
 
 // 공통 데이터 생성 로직을 사용하는 함수
 const generateUserData = (seed, UUID = null, phoneNumberOffset = 0) => ({
@@ -65,10 +84,23 @@ const getTestPhoneNumberUpdateData = (seed, UUID) => ({
   userPassword: `test_${seed}`,
 });
 
+/**
+ * @name getTokenOfUserData
+ * @description 사용자 데이터로 토큰 생성 함수
+ * 
+ * @param {int} seed 
+ * @returns {string} 생성된 토큰
+ */
+const getTokenOfUserData = (seed) => {
+  const userData = generateUserData(seed);
+  return generateToken("USER", userData.userUUID);
+}
+
 module.exports = {
-  SignupUser,
+  createUserModel,
   getTestSignUpUserData,
   getTestSignInUserData,
   getTestUpdateUserData,
   getTestPhoneNumberUpdateData,
+  getTokenOfUserData,
 };

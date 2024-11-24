@@ -1,8 +1,12 @@
 // service/userService.js
 
-const TempPhoneNumber = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
-const TempUserID = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
-const { SignupUser } = require('../../shared/models/userModel');           // 최종적으로 사용자 정보를 저장하는 모델
+// 필요한 모듈 불러오기
+const { createTempPhoneNumberModel } = require('../models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
+const { createTempUserIDModel } = require('../models/tempUserIDModel');        // 임시로 아이디를 저장하는 모델
+const { createUserModel } = require('../../shared/models/userModel');          // 사용자 모델
+
+// 필요한 Util 불러오기
+const { connectDB, isMongoDBConnected, DBType } = require('../../shared/utils/db');
 
 /** # 전화번호 중복 확인 및 저장 함수
  * 
@@ -18,7 +22,7 @@ const { SignupUser } = require('../../shared/models/userModel');           // �
  * @returns {object} message: 응답 메시지
  * @returns {object} error: 오류 메시지
  */
-async function checkPhoneNumberAvailableService(userDeviceID, userPhoneNumber, dialCode, isoCode ) {
+const checkPhoneNumberAvailableService = async function (userDeviceID, userPhoneNumber, dialCode, isoCode ) {
     try {
       // 전화번호 유효성 검사
       if (!userPhoneNumber || userPhoneNumber.trim() === '') {
@@ -39,6 +43,19 @@ async function checkPhoneNumberAvailableService(userDeviceID, userPhoneNumber, d
       if (!isoCode || isoCode.trim() === '') {
         return {isAvailable: false, message: '국가 코드를 입력해주세요.'};
       }
+
+      // DB 연결
+      const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+      if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+        throw new Error('DB 연결 실패');
+      }
+
+      // 임시 저장소(TempPhoneNumber) 모델 생성
+      const TempPhoneNumber = createTempPhoneNumberModel(userDB);
+
+      // 사용자 DB 모델 생성
+      const SignupUser = createUserModel(userDB);
   
       // 임시 저장소(TempPhoneNumber)에서 전화번호(dialcode와 조합됨)가 이미 존재하는지 확인
       const tempPhoneNumber = await TempPhoneNumber.findOne({ userPhoneNumber: userPhoneNumber, dialCode: dialCode, isoCode: isoCode });
@@ -69,6 +86,7 @@ async function checkPhoneNumberAvailableService(userDeviceID, userPhoneNumber, d
       }
     } catch (error) {
       // 예외 발생 시, 서버 오류로 응답하고 콘솔에 오류 로그 출력
+      console.error(error);
       return { error: error.message };
     }
 }
@@ -85,7 +103,7 @@ async function checkPhoneNumberAvailableService(userDeviceID, userPhoneNumber, d
  * @returns {object} message: 응답 메시지
  * @returns {object} error: 오류 메시지
  */
-async function checkUserIDAvailableService(userUID, userID) {
+const checkUserIDAvailableService = async function(userUID, userID) {
     try {
       // 아이디 유효성 검사
       if (!userID || userID.trim() === '') {
@@ -98,6 +116,16 @@ async function checkUserIDAvailableService(userUID, userID) {
         // 사용자 정보가 없는 경우, 입력해달라는 메시지 반환
         return {isAvailable: false, message: '사용자 정보가 없습니다.'};
       }
+
+      // DB 연결
+      const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+      if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+        throw new Error('DB 연결 실패');
+      }
+
+      const SignupUser = createUserModel(userDB);
+      const TempUserID = createTempUserIDModel(userDB);
   
       // 임시 저장소(TempUserID)에서 해당 아이디가 이미 존재하는지 확인
       const tempUserID = await TempUserID.findOne({ userID: userID });
@@ -132,7 +160,37 @@ async function checkUserIDAvailableService(userUID, userID) {
     }
 }
 
+/** # 사용자 UUID가 DB에 존재하는지 확인하는 함수
+ * @name isExistUserUUID
+ * @description 사용자 UUID가 DB에 존재하는지 확인하는 함수
+ * 
+ * @param {String} userUUID 
+ * 
+ * @returns {boolean} 사용자 UUID가 존재하면 true, 존재하지 않으면 false
+ */
+const isExistUserUUID = async function (userUUID) {
+  // DB 연결
+  const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+
+  if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+    throw new Error('DB 연결 실패');
+  }
+
+  // 사용자 DB 모델 생성
+  const SignupUser = createUserModel(userDB);
+
+  // 사용자 UUID로 사용자 정보 조회
+  const user = await SignupUser.findOne({ userUUID: userUUID });
+
+  if (user !== null) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 module.exports = {
-    checkPhoneNumberAvailableService,
-    checkUserIDAvailableService,
+  checkPhoneNumberAvailableService,
+  checkUserIDAvailableService,
+  isExistUserUUID,
 };

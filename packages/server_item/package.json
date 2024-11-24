@@ -1,0 +1,9 @@
+{
+    "name": "user",
+    "version": "1.0.0",
+    "dependencies": {
+        "@woju-monorepo/shared-models": "workspace:*",
+        "@woju-monorepo/shared-services": "workspace:*",
+        "@woju-monorepo/shared-utils": "workspace:*"
+    }
+  }
