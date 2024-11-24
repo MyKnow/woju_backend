@@ -53,13 +53,17 @@ exports.getAdminToken = (req, res) => {
   // 관리자 아이디와 비밀번호 확인
   const correctID = process.env.ADMIN_ID;
   const correctPW = process.env.ADMIN_PW;
+
+  if (!correctID || !correctPW) {
+    return res.status(500).json({ message: '관리자 정보를 확인해주세요.' });
+  }
   
   // 테스트용 관리자 아이디와 비밀번호 확인
   if (adminID != correctID) {
-    return res.status(400).json({ message: '아이디가 일치하지 않습니다.', id: adminID, correctID: correctID });
+    return res.status(400).json({ message: '아이디가 일치하지 않습니다.' });
   }
   if (adminPW != correctPW) {
-    return res.status(400).json({ message: '비밀번호가 일치하지 않습니다.', pw: adminPW, correctPW: correctPW });
+    return res.status(400).json({ message: '비밀번호가 일치하지 않습니다.' });
   }
 
   // 관리자 토큰 발급
