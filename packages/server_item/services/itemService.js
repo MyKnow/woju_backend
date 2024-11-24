@@ -78,8 +78,8 @@ const parameterCheckForAddItem = async function (itemData) {
             return false;
         }
 
-        // itemFeelingOfUse: 1, 2, 3, 4, 5 중 하나
-        if (typeof itemFeelingOfUse !== 'number' || itemFeelingOfUse < 1 || itemFeelingOfUse > 5) {
+        // itemFeelingOfUse: 0, 1, 2, 3, 4 중 하나
+        if (typeof itemFeelingOfUse !== 'number' || itemFeelingOfUse < 0 || itemFeelingOfUse > 4) {
             return false;
         }
 

@@ -40,7 +40,7 @@ const itemSchema = new mongoose.Schema({
  * @param {List<Buffer>} itemImages - 아이템의 이미지, Non-Null
  * @param {String} itemDescription - 아이템의 설명, Non-Null
  * @param {Number} itemPrice - 아이템의 가격, Non-Null
- * @param {int} itemFeelingOfUse - 아이템의 사용감, 1: 미개봉, 2: 단순개봉, 3: 사용감 적음, 4: 사용감 많음, 5: 고장 또는 파손, Non-Null
+ * @param {int} itemFeelingOfUse - 아이템의 사용감, 0: 미개봉, 1: 단순개봉, 2: 사용감 적음, 3: 사용감 많음, 4: 고장 또는 파손, Non-Null
  * @param {Location} itemBarterPlace - 아이템의 교환 장소, Non-Null
  * @param {String} itemOwnerUUID - 아이템의 소유자 UUID, Non-Null
  * @TODO : {String} itemVectorValue - 아이템의 벡터값, Non-Null, TODO 추후 추가
