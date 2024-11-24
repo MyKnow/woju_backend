@@ -56,10 +56,10 @@ exports.getAdminToken = (req, res) => {
   
   // 테스트용 관리자 아이디와 비밀번호 확인
   if (adminID != correctID) {
-    return res.status(400).json({ message: '아이디가 일치하지 않습니다.', id: adminID });
+    return res.status(400).json({ message: '아이디가 일치하지 않습니다.', id: adminID, correctID: correctID });
   }
   if (adminPW != correctPW) {
-    return res.status(400).json({ message: '비밀번호가 일치하지 않습니다.', pw: adminPW });
+    return res.status(400).json({ message: '비밀번호가 일치하지 않습니다.', pw: adminPW, correctPW: correctPW });
   }
 
   // 관리자 토큰 발급
