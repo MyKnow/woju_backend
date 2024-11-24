@@ -55,10 +55,10 @@ exports.getAdminToken = (req, res) => {
   const correctPW = process.env.ADMIN_PW;
   
   // 테스트용 관리자 아이디와 비밀번호 확인
-  if (adminID !== correctID) {
+  if (adminID != correctID) {
     return res.status(400).json({ message: '아이디가 일치하지 않습니다.', id: adminID });
   }
-  if (adminPW !== correctPW) {
+  if (adminPW != correctPW) {
     return res.status(400).json({ message: '비밀번호가 일치하지 않습니다.', pw: adminPW });
   }
 
