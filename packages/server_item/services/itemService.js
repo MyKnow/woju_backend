@@ -2,6 +2,7 @@
 
 // 필요한 모델 불러오기
 const { createItemModel } = require('../../server_item/models/itemModel');
+const { getCategory }  = require('../../server_item/models/categoryModel');
 const { isValidateLocation } = require('../models/locationModel');
 
 // 필요한 라이브러리 불러오기
@@ -101,7 +102,9 @@ const parameterCheckForAddItem = async function (itemData) {
  * 
  * @param {Object} itemData - 아이템 데이터
  * 
- * @returns {{boolean, string?}} - 아이템 추가 결과 (성공 여부, 실패 이유: 실패 시에만)
+ * @returns {{boolean, string?}} 
+ * - [boolean] success: 성공 여부
+ * - [string] error?: 에러 메시지
  */
 const addItem = async function (itemData) {
     const {
@@ -144,10 +147,13 @@ const addItem = async function (itemData) {
             itemUUID: itemUUID,
         });
     } while (existing);
+
+    const category = getCategory(itemCategory);
+    
     // 아이템 생성
     const newItem = new Item({
         itemUUID,
-        itemCategory,
+        category,
         itemName,
         itemImages,
         itemDescription,

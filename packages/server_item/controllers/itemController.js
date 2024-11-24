@@ -109,7 +109,7 @@ exports.addItem = [
         });
       } else {
         return res.status(400).json({
-          message: '아이템 추가 실패',
+          message: '아이템 추가 실패: ' + result.error,
         });
       }
     } catch (error) {
