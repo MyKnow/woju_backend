@@ -290,7 +290,7 @@ exports.loginUser = async (req, res) => {
       await SignupUser.updateOne({ userID: user.userID }, { lastLoginAt: Date.now(), userDeviceID: userDeviceID });
 
       // JWT 토큰 생성
-      const token = generateToken("USER", user.userUUID);
+      const token = generateToken("USER", { userUUID: user.userUUID} );
 
       // user에서 password 필드만 제거한 객체를 생성하여 응답
       const { userPassword, ...userInfo } = user._doc;

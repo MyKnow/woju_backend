@@ -101,7 +101,7 @@ describe('정책 관련 API 테스트', () => {
     // POST 테스트
     describe('POST /policy/terms', () => {
         it('ADMIN이 나라별로 약관을 추가한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const responseOfTerms = await request(app)
             .post('/api/policy/terms')
@@ -136,7 +136,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('요청 바디가 올바르지 않으면 400을 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .post('/api/policy/terms')
@@ -155,7 +155,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('유효하지 않은 토큰이면 402를 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).post('/api/policy/terms').set('Authorization', `Bearer ${adminToken}invalid`).send({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관 추가', country: CountryType.KR });
 
@@ -178,7 +178,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('일반 사용자가 요청하면 403을 반환한다.', async () => {
-            const userToken = generateToken(DBType.POLICY);
+            const userToken = generateToken('USER', { userUUID: 'testUUID' });
     
             const response = await request(app)
             .post('/api/policy/terms')
@@ -189,7 +189,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it ('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).post('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: 'invalid', content: '테스트 약관 추가', country: 'invalid' });
             expect(response.statusCode).toBe(406);
@@ -222,7 +222,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .post('/api/policy/terms')
@@ -248,7 +248,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .put('/api/policy/terms')
@@ -262,7 +262,7 @@ describe('정책 관련 API 테스트', () => {
         });
         
         it('요청 바디가 올바르지 않으면 400을 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).put('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: PolicyType.TermsOfService });
 
@@ -317,7 +317,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
             
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).put('/api/policy/terms').set('Authorization', `Bearer ${adminToken}invalid`).send({ version: '1.0.0', type: PolicyType.TermsOfService, content: '수정된 약관', country: CountryType.KR });
 
@@ -329,7 +329,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('일반 사용자가 요청하면 403을 반환한다.', async () => {
-            const userToken = generateToken(DBType.POLICY);
+            const userToken = generateToken('USER', { userUUID: 'testUUID' });
     
             const response = await request(app)
             .put('/api/policy/terms')
@@ -340,7 +340,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('존재하지 않는 약관을 수정하면 404를 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .put('/api/policy/terms')
@@ -351,7 +351,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).put('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: 'invalid', content: '수정된 약관', country: 'invalid' });
             expect(response.statusCode).toBe(406);
@@ -386,7 +386,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
     
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .delete('/api/policy/terms')
@@ -413,7 +413,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
 
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .delete('/api/policy/terms')
@@ -462,7 +462,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
 
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).delete('/api/policy/terms').set('Authorization', `Bearer ${adminToken}invalid`).send({ version: '1.0.0', type: PolicyType.TermsOfService, country: CountryType.KR });
 
@@ -486,7 +486,7 @@ describe('정책 관련 API 테스트', () => {
 
             await Policy.create({ version: '1.0.0', type: PolicyType.TermsOfService, content: '테스트 약관', country: CountryType.KR });
 
-            const userToken = generateToken(DBType.POLICY);
+            const userToken = generateToken('USER', { userUUID: 'testUUID' });
     
             const response = await request(app)
             .delete('/api/policy/terms')
@@ -500,7 +500,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('존재하지 않는 약관을 삭제하면 404를 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
     
             const response = await request(app)
             .delete('/api/policy/terms')
@@ -511,7 +511,7 @@ describe('정책 관련 API 테스트', () => {
         });
 
         it('type, country 값이 올바르지 않으면 406을 반환한다.', async () => {
-            const adminToken = generateToken('ADMIN');
+            const adminToken = generateToken('ADMIN', { adminID: process.env.ADMIN_ID });
 
             const response = await request(app).delete('/api/policy/terms').set('Authorization', `Bearer ${adminToken}`).send({ version: '1.0.0', type: 'invalid', country: 'invalid' });
             expect(response.statusCode).toBe(406);

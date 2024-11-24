@@ -9,7 +9,6 @@ const { DBName } = require('../../shared/utils/db');
  * @typedef {Object} PolicyType
  * @property {string} TermsOfService - 이용 약관
  * @property {string} PrivacyPolicy - 개인정보 처리방침
- * @property {string} Other - 기타
  * 
  */
 const PolicyType = Object.freeze({
@@ -29,6 +28,17 @@ const CountryType = Object.freeze({
   US: 'US',
 });
 
+/**
+ * @name policySchema
+ * @description Policy Schema
+ * 
+ * @property {string} version - 버전 (String, Required, None-Unique)
+ * @property {string} content - 내용 (String, Required, None-Unique)
+ * @property {string} country - 국가 (String, Required, None-Unique)
+ * @property {string} type - 타입 (String, Required, None-Unique)
+ * @property {Date} updatedAt - 업데이트 일자 (Date, Default: Date.now)
+ * 
+ */
 const policySchema = new mongoose.Schema({
   version: {
     type: String,
@@ -40,12 +50,10 @@ const policySchema = new mongoose.Schema({
   },
   country: {
     type: String,
-    enum: Object.values(CountryType),
     required: true,
   },
   type: {
     type: String,
-    enum: Object.values(PolicyType),
     required: true,
   },
   updatedAt: {
@@ -54,7 +62,7 @@ const policySchema = new mongoose.Schema({
   }
 });
 
-// version이 동일하더라도 type과 country가 다르면 다른 문서로 취급
+
 policySchema.index({ version: 1, type: 1, country: 1 }, { unique: true });
 
 /**

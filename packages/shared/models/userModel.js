@@ -93,7 +93,7 @@ const getTestPhoneNumberUpdateData = (seed, UUID) => ({
  */
 const getTokenOfUserData = (seed) => {
   const userData = generateUserData(seed);
-  return generateToken("USER", userData.userUUID);
+  return generateToken("USER", { userUUID: userData.userUUID });
 }
 
 module.exports = {

@@ -158,7 +158,7 @@ describe('POST /api/item/add-item', () => {
     });
 
     it('Token의 userUUID가 DB에 없으면 402 상태 코드를 반환한다.', async () => {
-        const userToken = generateToken("USER", 'notExistUserUUID');
+        const userToken = generateToken("USER", { userUUID: 'notExistUserUUID'});
 
         // 요청
         const response = await request(app)

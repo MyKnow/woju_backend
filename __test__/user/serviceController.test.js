@@ -48,3 +48,30 @@ describe('서버 연결 상태 확인 API', () => {
         expect(response.statusCode).toBe(500);
     });
 });
+
+describe('POST /api/service/admin-token', () => {
+    it('정상적인 adminID와 adminPW를 입력하면 200 상태 코드를 반환한다.', async () => {
+        const response = await request(app)
+            .post('/api/service/admin-token')
+            .send({ adminID: process.env.ADMIN_ID, adminPW: process.env.ADMIN_PW });
+        expect(response.statusCode).toBe(200);
+
+        // 토큰이 반환되는지 확인
+        expect(response.body).toHaveProperty('jwt');
+        expect(response.body.jwt).not.toBeNull();
+    });
+
+    it('비정상적인 adminID와 adminPW를 입력하면 400 상태 코드를 반환한다.', async () => {
+        const response = await request(app)
+            .post('/api/service/admin-token')
+            .send({ adminID: 'wrongID', adminPW: 'wrongPW' });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('adminID와 adminPW를 입력하지 않으면 400 상태 코드를 반환한다.', async () => {
+        const response = await request(app)
+            .post('/api/service/admin-token')
+            .send({ });
+        expect(response.statusCode).toBe(400);
+    });
+});

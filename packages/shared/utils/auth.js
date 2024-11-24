@@ -32,6 +32,19 @@ exports.verifyAdmin = (req, res, next) => {
     if (decoded.role !== 'ADMIN') {
       return res.status(403).json({ message: '권한이 없습니다.' });
     }
+
+    // 발급자(iss)와 대상자(aud) 확인
+    if (decoded.iss !== 'woju-backend' || decoded.aud !== 'woju-frontend') {
+      return res.status(402).json({ message: '유효하지 않은 토큰입니다.' });
+    }
+
+    // exp(만료 시간) 확인
+    if (decoded.exp < Date.now() / 1000) {
+      return res.status(402).json({ message: '토큰이 만료되었습니다.' });
+    }
+    
+    // ADMIN ID를 request에 추가
+    req.adminID = decoded.adminID;
     
     req.user = decoded;  // 사용자 정보를 request에 추가
     next();  // 다음 미들웨어 또는 컨트롤러로 이동
@@ -96,7 +109,13 @@ exports.verifyUser = async function (req, res, next) {
  * 
  * ## Parameters
  * @param {string} role - 사용자 역할
+ * 
+ * # Optional Parameters (User용)
  * @param {string} userUUID - 사용자 UUID
+ * 
+ * # Optional Parameters (Admin용)
+ * @param {string} adminID - 관리자 ID
+ * @param {string} adminP
  * 
  * ## Returns
  * @returns {string} JWT 토큰
@@ -109,13 +128,32 @@ exports.verifyUser = async function (req, res, next) {
  * - 
  * - 
  */
-exports.generateToken = (role, userUUID) => {
-  const payload = {
-    iss: 'woju-backend',
-    aud: 'woju-frontend',
-    role,
-    userUUID,
-  };
+exports.generateToken = (role, { userUUID, adminID }) => {
+  if (role === 'USER' && !userUUID) {
+    throw new Error('사용자 UUID가 필요합니다.');
+  } else if (role === 'ADMIN' && (!adminID)) {
+    throw new Error('관리자 ID와 비밀번호가 필요합니다.');
+  }
 
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  if (role === 'USER') {
+    const payload = {
+      iss: 'woju-backend',
+      aud: 'woju-frontend',
+      role,
+      userUUID,
+    };
+  
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  } else if (role === 'ADMIN') {
+    const payload = {
+      iss: 'woju-backend',
+      aud: 'woju-frontend',
+      role,
+      adminID,
+    };
+
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  }
+
+  throw new Error('유효하지 않은 역할입니다.');
 }
