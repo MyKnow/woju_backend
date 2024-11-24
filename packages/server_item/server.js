@@ -6,7 +6,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 // 필요한 Utils 가져오기
-const { connectDB } = require('../shared/utils/db'); // DB 연결 로직
+const { connectDB, DBType } = require('../shared/utils/db'); // DB 연결 로직
 const { logger, httpLogger } = require('../shared/utils/logger');
 
 // 필요한 라우터 가져오기
@@ -49,24 +49,41 @@ app.use((req, res, next) => {
   next();
 });
 
-// env 파일에 있는 DB URI를 가져와서 연결
-const { MONGO_ITEM_DB_URI, MONGO_USER_DB_URI } = process.env;
+// 연결 성공 시 콘솔에 출력
+connectDB(DBType.USER, process.env.MONGO_USER_DB_URI) // user DB 연결
+  .then(() => {
+    console.log('Connected to User DB');
+  })
+  .catch((err) => {
+    console.error(err);
+  });
 
-// DB 연결
-const itemDB = connectDB('Item', MONGO_ITEM_DB_URI);
-const userDB = connectDB('User', MONGO_USER_DB_URI);
+connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI) // policy DB 연결
+  .then(() => {
+    console.log('Connected to Policy DB');
+  })
+  .catch((err) => {
+    console.error(err);
+  });
 
-// DB 연결 실패 시 에러 메시지 출력
-if (!itemDB) {
-  logger.error('Item DB connection failed');
-}
-
-if (!userDB) {
-  logger.error('User DB connection failed');
-}
+connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI) // item DB 연결
+  .then(() => {
+    console.log('Connected to Item DB');
+  })
+  .catch((err) => {
+    console.error(err);
+  });
 
 // 라우터 설정
 app.use('/api/item', itemRoutes); // "/api/item" 경로로 시작하는 요청은 itemRoutes 라우터로 전달됩니다.
+
+// 에러 핸들러
+app.use((err, req, res, next) => {
+  logger.error(req, `Error: ${err.message}`);
+  res.status(500).json({ error: 'Internal Server Error' });
+
+  next(err);
+});
 
 // 서버 실행
 const PORT = 3001;
