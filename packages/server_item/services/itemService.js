@@ -9,11 +9,8 @@ const { isValidateLocation } = require('../models/locationModel');
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 
-// 필요한 서비스 불러오기
-const { isMongoDBConnected } = require('../../shared/utils/db');
-
 // 필요한 Util 불러오기
-const { connectDB, DBType } = require('../../shared/utils/db');
+const { isMongoDBConnected, connectDB, DBType } = require('../../shared/utils/db');
 
 /**
  * @name healthCheckForDB
@@ -94,7 +91,6 @@ const parameterCheckForAddItem = async function (itemData) {
         return false;
     }
 }
-
 
 /**
  * @name addItem
@@ -183,7 +179,7 @@ const addItem = async function (itemData) {
  * - [List<Object>] itemList: 아이템 목록
  * - [string]? error: 에러 메시지
  */
-const getUsersItemList = async function (userUUID) {
+const getItemList = async function (userUUID) {
     // DB 연결
     const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
 
@@ -203,9 +199,134 @@ const getUsersItemList = async function (userUUID) {
     }
 }
 
+/**
+ * @name updateItem
+ * @description 아이템 수정 함수
+ * 
+ * @param {String} userUUID - 사용자 UUID
+ * @param {Object} itemData - 아이템 데이터
+ * 
+ * @returns {{boolean, string?}}
+ * - [boolean] success: 성공 여부
+ * - [string]? error: 에러 메시지
+ */
+const updateItem = async function (itemData) {
+    const {
+        itemUUID,
+        itemCategory,
+        itemName,
+        itemImages,
+        itemDescription,
+        itemPrice,
+        itemFeelingOfUse,
+        itemBarterPlace,
+        itemStatus,
+    } = itemData;
+
+    // DB 연결
+    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+
+    if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
+        return { success: false, error: 'DB 연결 실패' };
+    }
+
+    // 모델 생성
+    const Item = createItemModel(itemDB);
+
+    // 파라미터 체크
+    const isParameterValid = await parameterCheckForAddItem(itemData);
+
+    if (isParameterValid === false) {
+        return { success: false, error: '파라미터가 올바르지 않습니다.' };
+    }
+
+    // 아이템 수정
+    try {
+        await Item.updateOne({ itemUUID: itemUUID }, {
+            itemCategory,
+            itemName,
+            itemImages,
+            itemDescription,
+            itemPrice,
+            itemFeelingOfUse,
+            itemBarterPlace,
+            itemStatus,
+        });
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error };
+    }
+};
+
+/**
+ * @name getItemInfo
+ * @description 아이템 UUID를 통한 아이템 정보 조회 함수
+ * 
+ * @param {String} itemUUID - 아이템 UUID
+ * 
+ * @returns {Item}? - 아이템 정보 객체 (존재하지 않는 경우 null)
+ */
+const getItemInfo = async function (itemUUID) {
+    // DB 연결
+    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+
+    if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
+        return null;
+    }
+
+    // 모델 생성
+    const Item = createItemModel(itemDB);
+
+    // 아이템 조회
+    try {
+        const item = await Item.findOne({ itemUUID: itemUUID });
+
+        if (!item) {
+            return null;
+        }
+
+        return item;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+/**
+ * @name deleteItem
+ * @description 아이템 삭제 함수
+ * 
+ * @param {String} itemUUID - 아이템 UUID
+ * 
+ * @returns {{boolean, string?}}
+ * - [boolean] success: 성공 여부
+ * - [string]? error: 에러 메시지
+ */
+const deleteItem = async function (itemUUID) {
+    // DB 연결
+    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+
+    if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
+        return { success: false, error: 'DB 연결 실패' };
+    }
+
+    // 모델 생성
+    const Item = createItemModel(itemDB);
+
+    // 아이템 삭제
+    try {
+        await Item.deleteOne({ itemUUID: itemUUID });
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error };
+    }
+}
+
+
 
 exports.addItem = addItem;
 exports.parameterCheckForAddItem = parameterCheckForAddItem;
-exports.getUsersItemList = getUsersItemList;
-
-
+exports.getItemList = getItemList;
+exports.updateItem = updateItem;
+exports.getItemInfo = getItemInfo;
+exports.deleteItem = deleteItem;
