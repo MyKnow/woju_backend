@@ -21,6 +21,13 @@ router.get('/health-check', itemController.healthCheck);
  */
 router.post('/add-item', itemController.addItem);
 
+/**
+ * @name GET /item/get-users-item-list
+ * 
+ * @description 아이템 목록 조회 API
+ */
+router.get('/get-users-item-list', itemController.getUsersItemList);
+
 
 
 // Export the router

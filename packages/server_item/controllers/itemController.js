@@ -5,7 +5,7 @@ const { verifyUser } = require('../../shared/utils/auth');
 const { isMongoDBConnected } = require('../../shared/utils/db');
 
 // 필요한 서비스 불러오기
-const { addItem, parameterCheckForAddItem } = require('../services/itemService');
+const { addItem, parameterCheckForAddItem, getUsersItemList } = require('../services/itemService');
 const { isExistUserUUID } = require('../../shared/services/userService');
 
 /**
@@ -116,6 +116,61 @@ exports.addItem = [
       console.error('Error in addItem controller:', error);
       return res.status(500).json({
         message: '서버 에러',
+        error: error.message,
+      });
+    }
+  },
+];
+
+/**
+ * @name getUsersItemList
+ * @description 아이템 조회 API
+ * 
+ * @param {Object} req - Request 객체
+ * @param {Object} res - Response 객체
+ * 
+ * @returns {Object} - API 응답 결과
+ * - List<Item> itemList: 사용자의 아이템 목록
+ * - String error: 에러 메시지
+ * 
+ * - 200: 아이템 조회 성공
+ * - 400: 요청 바디가 올바르지 않음
+ * 
+ * @security - JWT 토큰(Bearer Token) 필요
+ */
+exports.getUsersItemList = [
+  verifyUser, // 미들웨어로 verifyUser를 추가
+  async (req, res) => {
+    try {
+      const itemOwnerUUID = req.userUUID;
+
+      const isExistUser = await isExistUserUUID(itemOwnerUUID);
+
+      if (!isExistUser) {
+        return res.status(402).json({
+          itemList: [],
+          message: '존재하지 않는 사용자입니다.',
+        });
+      }
+
+      // 아이템 조회
+      const { itemList, error } = await getUsersItemList(itemOwnerUUID); // 사용자의 아이템 목록 조회
+
+      // 결과 반환
+      if (error === null) {
+        return res.status(200).json({
+          itemList,
+        });
+      } else {
+        return res.status(400).json({
+          itemList: [],
+          error,
+        });
+      }
+    } catch (error) {
+      console.error('Error in getItem controller:', error);
+      return res.status(500).json({
+        itemList: [],
         error: error.message,
       });
     }

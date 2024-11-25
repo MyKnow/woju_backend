@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid');
 const { isMongoDBConnected } = require('../../shared/utils/db');
 
 // 필요한 Util 불러오기
-const { connectDB } = require('../../shared/utils/db');
+const { connectDB, DBType } = require('../../shared/utils/db');
 
 /**
  * @name healthCheckForDB
@@ -21,8 +21,8 @@ const { connectDB } = require('../../shared/utils/db');
  * 
  * @returns {boolean} - DB 연결 상태
  */
-exports.healthCheckForDB = () => {
-  return isMongoDBConnected('Item');
+exports.healthCheckForItemDB = () => {
+  return isMongoDBConnected(DBType.ITEM);
 }
 
 /**
@@ -124,9 +124,9 @@ const addItem = async function (itemData) {
     let existing;
 
     // DB 연결
-    const itemDB = await connectDB('Item', process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
 
-    if (!itemDB || isMongoDBConnected('Item') === false) {
+    if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
         return { success: false, error: 'DB 연결 실패' };
     }
 
@@ -173,7 +173,39 @@ const addItem = async function (itemData) {
     }
 }
 
+/**
+ * @name getUsersItemList
+ * @description 사용자의 아이템 목록 조회 함수
+ * 
+ * @param {string} userUUID - 사용자 UUID
+ * 
+ * @returns {{List<Object>, string?}}
+ * - [List<Object>] itemList: 아이템 목록
+ * - [string]? error: 에러 메시지
+ */
+const getUsersItemList = async function (userUUID) {
+    // DB 연결
+    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+
+    if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
+        return { itemList: [], error: 'DB 연결 실패' };
+    }
+
+    // 모델 생성
+    const Item = createItemModel(itemDB);
+
+    // 사용자의 아이템 목록 조회
+    try {
+        const itemList = await Item.find({ itemOwnerUUID: userUUID });
+        return { itemList, error: null };
+    } catch (error) {
+        return { itemList: [], error: error };
+    }
+}
+
+
 exports.addItem = addItem;
 exports.parameterCheckForAddItem = parameterCheckForAddItem;
+exports.getUsersItemList = getUsersItemList;
 
 

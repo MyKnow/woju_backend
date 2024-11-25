@@ -21,6 +21,18 @@ detect_changed_services() {
     git diff --cached --name-only | grep "^packages/server_" | cut -d/ -f2 | sort -u
 }
 
+# Jest 테스트 실행
+echo -e "${YELLOW}Jest 테스트를 실행합니다...${NC}"
+npx jest
+
+# Jest 테스트 결과 확인
+if [[ $? -ne 0 ]]; then
+    echo -e "${RED}테스트가 실패했습니다. 커밋을 중단합니다.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}모든 테스트가 통과했습니다.${NC}"
+
 # 커밋 타입 선택
 echo -e "${YELLOW}커밋 메시지 타입을 선택해주세요:${NC}"
 commit_types=(
