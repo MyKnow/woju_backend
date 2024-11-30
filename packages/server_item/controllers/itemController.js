@@ -8,7 +8,7 @@ const { isMongoDBConnected } = require('../../shared/utils/db');
 const { addItem, parameterCheckForAddItem, getItemList, updateItem, getItemInfo, deleteItem } = require('../services/itemService');
 const { isExistUserUUID } = require('../../shared/services/userService');
 
-/**
+/** # GET /health-check
  * @name healthCheck
  * 
  * @description 서버 상태 확인 API
@@ -32,7 +32,7 @@ exports.healthCheck = (req, res) => {
   });
 };
 
-/**
+/** # POST /item/add-item
  * @name addItem
  * 
  * @description 아이템 추가 API
@@ -123,7 +123,7 @@ exports.addItem = [
   },
 ];
 
-/**
+/** # GET /item/get-item-list
  * @name getItemList
  * @description 아이템 조회 API
  * 
@@ -179,7 +179,7 @@ exports.getItemList = [
   },
 ];
 
-/**
+/** # POST /item/update-item
  * @name updateItem
  * @description 아이템 수정 API
  * 
@@ -277,7 +277,7 @@ exports.updateItem = [
   },
 ];
 
-/**
+/** # DELETE /item/delete-item
  * @name deleteItem
  * @description 아이템 삭제 API
  * 
@@ -361,4 +361,59 @@ exports.deleteItem = [
       });
     }
   },
+];
+
+/** # GET /item/get-item-info
+ * @name getItemInfo
+ * @description 아이템 조회 API
+ * 
+ * @param {Object} req - Request 객체
+ * @param {Object} res - Response 객체
+ * 
+ * @returns {Object} - API 응답 결과
+ * - Item item: 아이템 정보 객체
+ * - String error: 에러 메시지
+ * 
+ * - 200: 아이템 조회 성공
+ * - 400: 요청 바디가 올바르지 않음
+ * - 404: 존재하지 않는 아이템
+ * - 500: 서버 에러
+ * 
+ * @security - JWT 토큰(Bearer Token) 필요
+ */
+exports.getItemInfo = [
+  verifyUser, // 미들웨어로 verifyUser를 추가
+  async (req, res) => {
+    try {
+      const { itemUUID } = req.query;
+
+      if (!itemUUID) {
+        return res.status(400).json({
+          item: null,
+          error: '요청 바디가 올바르지 않습니다.',
+        });
+      }
+
+      // 아이템 조회
+      const item = await getItemInfo(itemUUID);
+
+      // 결과 반환
+      if (item) {
+        return res.status(200).json({
+          item,
+        });
+      } else {
+        return res.status(404).json({
+          item: null,
+          error: '존재하지 않는 아이템입니다.',
+        });
+      }
+    } catch (error) {
+      console.error('Error in getItemInfo controller:', error);
+      return res.status(500).json({
+        item: null,
+        error: error.message,
+      });
+    }
+  }
 ];

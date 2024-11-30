@@ -10,26 +10,7 @@ const { locationSchema } = require('../models/locationModel');
 // 필요한 Util 불러오기
 const { DBName } = require('../../shared/utils/db');
 
-const itemSchema = new mongoose.Schema({
-    // Required
-    itemUUID: { type: String, required: true, unique: true },
-    itemCategory: { type: String, required: true },
-    itemName: { type: String, required: true },
-    itemImages: { type: [Buffer], required: true },
-    itemDescription: { type: String, required: true },
-    itemPrice: { type: Number, required: true },
-    itemFeelingOfUse: { type: Number, required: true },
-    itemBarterPlace: { type: locationSchema, required: true },
-    itemOwnerUUID: { type: String, required: true },
-    // Optional
-    itemStatus: { type: Number, default: 1 },
-    itemViews: { type: Number, default: 0 },
-    itemLikedUsers: { type: [String], default: [] },
-}, {
-    timestamps: true,
-});
-
-/** 
+/** # Item Schema
  * @name itemSchema
  * @description 아이템 데이터 스키마 정의
  * 
@@ -46,14 +27,32 @@ const itemSchema = new mongoose.Schema({
  * @TODO : {String} itemVectorValue - 아이템의 벡터값, Non-Null, TODO 추후 추가
  * 
  * @optional - Default 값이 존재하는 Parameter
- * @param {Date} itemCreatedAt - 아이템의 생성일, Non-Null, Default: 현재 시간
- * @param {Date} itemUpdatedAt - 아이템의 수정일, Non-Null, Default: 현재 시간
- * @param {int} itemStatus - 아이템의 상태, 0: 예약없음, 1: 예약중, 2: 교환완료, Non-Null, Default: 1
+ * @param {Date} createdAt - 아이템의 생성일, Non-Null, Default: 현재 시간
+ * @param {Date} updatedAt - 아이템의 수정일, Non-Null, Default: 현재 시간
+ * @param {int} itemStatus - 아이템의 상태, 0: 예약없음, 1: 예약중, 2: 교환완료, Non-Null, Default: 0
  * @param {int} itemViews - 아이템의 조회수, Non-Null, Default: 0
  * @param {List<String>} itemLikedUsers - 아이템의 매칭 신청 유저 리스트, Non-Null, Default: []
  */
+const itemSchema = new mongoose.Schema({
+    // Required
+    itemUUID: { type: String, required: true, unique: true },
+    itemCategory: { type: String, required: true },
+    itemName: { type: String, required: true },
+    itemImages: { type: [Buffer], required: true },
+    itemDescription: { type: String, required: true },
+    itemPrice: { type: Number, required: true },
+    itemFeelingOfUse: { type: Number, required: true },
+    itemBarterPlace: { type: locationSchema, required: true },
+    itemOwnerUUID: { type: String, required: true },
+    // Optional
+    itemStatus: { type: Number, default: 0 },
+    itemViews: { type: Number, default: 0 },
+    itemLikedUsers: { type: [String], default: [] },
+}, {
+    timestamps: true,
+});
 
-/**
+/** # Create Item Model
  * @name createItemModel
  * @description 아이템 모델 생성 함수
  * 
@@ -72,6 +71,7 @@ const createItemModel = (db) => {
     return db.model(DBName.ITEM, itemSchema);
 };
 
+// Export Module
 module.exports = { 
     itemSchema,
     createItemModel,

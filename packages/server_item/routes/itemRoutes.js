@@ -37,6 +37,12 @@ router.post('/update-item', itemController.updateItem);
  */
 router.delete('/delete-item', itemController.deleteItem);
 
+/**
+ * @name GET /item/get-item-info
+ * @description 아이템 상세 조회 API
+ */
+router.get('/get-item-info', itemController.getItemInfo);
+
 
 // Export the router
 module.exports = router;
