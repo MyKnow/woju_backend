@@ -221,6 +221,7 @@ const updateItem = async function (itemData) {
         itemFeelingOfUse,
         itemBarterPlace,
         itemStatus,
+        itemViews,
     } = itemData;
 
     // DB 연결

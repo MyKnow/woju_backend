@@ -948,4 +948,91 @@ describe('GET /api/item/get-item-info', () => {
         // 응답 코드 확인
         expect(response.statusCode).toBe(404);
     });
+
+    it('Token의 userUUID와 itemOwnerUUID가 다르면 View Count가 1 증가한다.', async () => {
+        // 테스트용 유저 생성
+        const signupResponse1 = await request(app)
+        .post('/api/user/signup')
+        .send(getTestSignUpUserData(1));
+
+        // 테스트용 유저 로그인
+        const loginResponse1 = await request(app).post('/api/user/login').send({
+            userID: getTestSignUpUserData(1).userID,
+            userPassword: getTestSignUpUserData(1).userPassword,
+            userDeviceID: getTestSignUpUserData(1).userDeviceID,
+        });
+
+        const userToken1 = loginResponse1.body.token;
+
+        // 아이템 추가
+        const addItemResponse = await request(app)
+            .post('/api/item/add-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                itemCategory: Category.ELECTRONICS.toString(),
+                itemName: 'testItem',
+                itemImages: [
+                    '0',
+                ],
+                itemDescription: 'testDescription',
+                itemPrice: 10000,
+                itemFeelingOfUse: 1,
+                itemBarterPlace: getTestLocationData(),
+            });
+
+        // 내 아이템 목록 조회
+        const getItemListResponse = await request(app)
+            .get('/api/item/get-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+
+        // 응답 데이터 확인
+        expect(getItemListResponse.body.itemList[0].itemName).toBe('testItem');
+
+        // 해당 아이템의 UUID
+        const itemUUID = getItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저 생성
+        const signupResponse2 = await request(app)
+        .post('/api/user/signup')
+        .send(getTestSignUpUserData(2));
+
+        // 테스트용 유저 로그인
+        const loginResponse2 = await request(app).post('/api/user/login').send({
+            userID: getTestSignUpUserData(2).userID,
+            userPassword: getTestSignUpUserData(2).userPassword,
+            userDeviceID: getTestSignUpUserData(2).userDeviceID,
+        });
+
+        const userToken2 = loginResponse2.body.token;
+
+        // 요청
+        const response = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: itemUUID });
+
+        // 응답 코드 확인
+        expect(response.statusCode).toBe(200);
+
+        // 응답 데이터 확인
+        expect(response.body.item.itemName).toBe('testItem');
+
+        // 응답 데이터 확인
+        expect(response.body.item.itemViews).toBe(1);
+
+        // 다시 요청
+        const response2 = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: itemUUID });
+
+        // 응답 코드 확인
+        expect(response2.statusCode).toBe(200);
+
+        // 응답 데이터 확인
+        expect(response2.body.item.itemName).toBe('testItem');
+
+        // 응답 데이터 확인
+        expect(response2.body.item.itemViews).toBe(2);
+    });
 });

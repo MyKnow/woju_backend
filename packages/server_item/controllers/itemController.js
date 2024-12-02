@@ -386,6 +386,7 @@ exports.getItemInfo = [
   async (req, res) => {
     try {
       const { itemUUID } = req.query;
+      const userUUID = req.userUUID;
 
       if (!itemUUID) {
         return res.status(400).json({
@@ -399,6 +400,12 @@ exports.getItemInfo = [
 
       // 결과 반환
       if (item) {
+        // itemOwnerUUID와 userUUID가 다른 경우 ViewCount 증가
+        if (item.itemOwnerUUID !== userUUID) {
+          item.itemViews += 1;
+          await item.save();
+        }
+        
         return res.status(200).json({
           item,
         });
