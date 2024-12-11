@@ -97,6 +97,7 @@ describe('POST /api/item/add-item', () => {
                 itemPrice: 10000,
                 itemFeelingOfUse: 1,
                 itemBarterPlace: getTestLocationData(),
+                itemStatus: 1,
             });
 
         // 응답 코드 확인
@@ -361,6 +362,7 @@ describe('POST /api/item/update-item', () => {
                 itemPrice: 20000,
                 itemFeelingOfUse: 2,
                 itemBarterPlace: getTestLocationData(),
+                itemStatus: 1,
             });
 
         // 응답 코드 확인

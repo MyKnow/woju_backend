@@ -108,7 +108,7 @@ exports.checkUserIDAvailable = async (req, res) => {
  * 
  */
 exports.signupUser = async (req, res) => {
-  const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate, termsVersion, privacyVersion } = req.body;
+  const {userDeviceID, userUID, userPhoneNumber, dialCode, isoCode, userID, userPassword, userProfileImage, userNickName, userGender, userBirthDate, termsVersion, privacyVersion, userFavoriteCategories} = req.body;
 
   // 필수 정보 누락 시, 사용자 정보가 없다고 응답
   // userDeviceID, userUID, userPassword, userNickName
@@ -203,6 +203,7 @@ exports.signupUser = async (req, res) => {
         userBirthDate: userBirthDate,
         termsVersion: termsSignUpVersion,
         privacyVersion: privacySignUpVersion,
+        userFavoriteCategories: userFavoriteCategories,
       });
 
       // 임시 저장소에 저장된 사용자 정보 삭제
@@ -403,6 +404,12 @@ exports.updateUserPassword = async (req, res) => {
     if (match) {
       const hashedPassword = await hashPassword(newPassword);
       await SignupUser.updateOne({ userID: userID }, { userPassword: hashedPassword });
+      // 비밀번호 변경 로그
+      logger.info(`비밀번호 변경 성공: userUUID=${user.userUUID}`);
+
+      // 비밀번호 변경 날짜 업데이트
+      await SignupUser.updateOne({ userID: userID }, { lastPasswordUpdateAt: Date.now() });
+
       return res.status(200).json({ isSuccess: true });
     } else {
       // 비밀번호가 일치하지 않는 경우, 비밀번호가 일치하지 않다고 응답
@@ -457,12 +464,16 @@ exports.resetUserPassword = async (req, res) => {
     await SignupUser.updateOne({ userUID: userUID }, { userPassword: hashedPassword });
 
     // 비밀번호 변경 로그
-    logger.info(`비밀번호 변경 성공: userUID=${userUID}`);
+    logger.info(`비밀번호 변경 성공: userUUID=${user.userUUID}`);
+
+    // 비밀번호 변경 날짜 업데이트
+    await SignupUser.updateOne({ userUID: userUID }, { lastPasswordUpdateAt: Date.now() });
 
     return res.status(200).json({ isSuccess: true });
 
   } catch (error) {
     logger.error(`비밀번호 변경 오류: userUID=${userUID}, error=${error.message}`);
+    console.error(error);
     return res.status(500).json({ failureReason: FailureReason.SERVER_ERROR, message: '서버 오류' });
   }
 }
@@ -529,10 +540,9 @@ exports.checkUserExists = async (req, res) => {
  * 
  */
 exports.updateUserInfo = async (req, res) => {
-  const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword, termsVersion, privacyVersion } = req.body;
+  const { userUUID, userProfileImage, userID, userPhoneNumber, dialCode, isoCode, userNickName, userGender, userBirthDate, userPassword, termsVersion, privacyVersion, userFavoriteCategories } = req.body;
 
   try {
-
     // DB 연결
     const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
 
@@ -599,7 +609,8 @@ exports.updateUserInfo = async (req, res) => {
           userGender: userGender, 
           userBirthDate: userBirthDate, 
           termsVersion: termsVersion, 
-          privacyVersion: privacyVersion 
+          privacyVersion: privacyVersion,
+          userFavoriteCategories: userFavoriteCategories
         }
       );
 

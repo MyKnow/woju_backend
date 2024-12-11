@@ -7,13 +7,40 @@ const mongoose = require('mongoose');
 const { generateToken } = require('../utils/auth');
 const { DBName } = require('../../shared/utils/db');
 
+// 필요한 모델 불러오기
+const Category = require('../../server_item/models/categoryModel');
+
 // 상수로 고정된 기본값 정의
 const DEFAULT_GENDER = 'private';
 const DEFAULT_BIRTH_DATE = '2000-01-01';
 const DEFAULT_TERMS_VERSION = '1.0.0';
 const DEFAULT_PRIVACY_VERSION = '1.0.0';
 
-// userSchema 정의 최적화
+/**
+ * @name userSchema
+ * @description 사용자 스키마
+ * 
+ * @type {mongoose.Schema}
+ * 
+ * @property {String} userUUID - UUID 필드
+ * @property {String} userUID - Firebase Auth UID
+ * @property {String} userDeviceID - 사용자 기기 식별자
+ * @property {String} userPhoneNumber - 전화번호
+ * @property {String} dialCode - 국가 코드
+ * @property {String} isoCode - ISO 국가 코드
+ * @property {String} userID - 사용자 아이디
+ * @property {String} userPassword - 비밀번호 (암호화 저장)
+ * @property {Buffer} userProfileImage - 프로필 이미지
+ * @property {String} userNickName - 닉네임
+ * @property {String} userGender - 성별
+ * @property {String} userBirthDate - 생년월일
+ * @property {String} termsVersion - 약관 버전
+ * @property {String} privacyVersion - 개인정보 처리 방침 버전
+ * @property {Date} createdAt - 생성일
+ * @property {Date} lastLoginAt - 마지막 로그인 일
+ * @property {Date} lastPasswordUpdateAt - 마지막 비밀번호 변경일
+ * @property {Map<Object>} userFavoriteCategories - 사용자가 좋아하는 카테고리 목록 (key: 카테고리 이름, value: 선호 순위 (0이 가장 높음))
+ */
 const userSchema = new mongoose.Schema({
   userUUID: { type: String, required: true, unique: true },   // UUID 필드
   userUID: { type: String, required: true, unique: true },    // Firebase Auth UID
@@ -32,6 +59,7 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },               // 생성일
   lastLoginAt: { type: Date, default: Date.now },             // 마지막 로그인 일
   lastPasswordUpdateAt: { type: Date, default: Date.now },    // 마지막 비밀번호 변경일
+  userFavoriteCategories: { type: Map, of: Number, default: {} }, // 사용자가 좋아하는 카테고리 목록 (key: 카테고리 이름, value: 선호 순위 (0이 가장 높음))
 });
 
 /**
@@ -64,7 +92,13 @@ const generateUserData = (seed, UUID = null, phoneNumberOffset = 0) => ({
   userBirthDate: DEFAULT_BIRTH_DATE,
   termsVersion: DEFAULT_TERMS_VERSION,
   privacyVersion: DEFAULT_PRIVACY_VERSION,
+  createdAt: new Date(),
+  lastLoginAt: new Date(),
+  lastPasswordUpdateAt: new Date(), 
+  // seed가 0이면 전자제품 카테고리를 선호 카테고리로 설정, 그 외에는 'furniture', 'lifestyle' 카테고리를 선호 카테고리로 설정
+  userFavoriteCategories: seed === 0 ? { [Category.ELECTRONICS]: 0 } : { [Category.FURNITURE]: 0, [Category.LIFESTYLE]: 1 },
 });
+
 
 // 각 테스트 데이터 생성 함수
 const getTestSignUpUserData = (seed) => generateUserData(seed);

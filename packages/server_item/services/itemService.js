@@ -93,6 +93,90 @@ const parameterCheckForAddItem = async function (itemData) {
 }
 
 /**
+ * @name parameterCheckForUpdateItem
+ * @description 아이템 수정 파라미터 확인 함수
+ * 
+ * @param {Object} itemData - 아이템 데이터
+ * - itemUUID: String
+ * - itemCategory: String에서 Category로 변경 가능해야 함.
+ * - itemName: 5글자 이상, 30글자 이하
+ * - itemImages: 1개 이상, 5개 이하인 Buffer List
+ * - itemDescription: 10글자 이상, 300글자 이하
+ * - itemPrice: 0 이상, 100,000,000,000 이하
+ * - itemFeelingOfUse: 1, 2, 3, 4, 5 중 하나
+ * - itemBarterPlace: String에서 Location으로 변경 가능해야하며, 모든 Field가 존재해야 함.
+ * - itemStatus: 0, 1, 2 중 하나
+ * 
+ * @returns {boolean} - 파라미터 유효성 여부
+ */
+const parameterCheckForUpdateItem = async function (itemData) {
+    try {
+        const {
+            itemUUID,
+            itemCategory,
+            itemName,
+            itemImages,
+            itemDescription,
+            itemPrice,
+            itemFeelingOfUse,
+            itemBarterPlace,
+            itemStatus,
+        } = itemData;
+
+        // itemUUID: String
+        if (typeof itemUUID !== 'string') {
+            return false;
+        }
+
+        // itemCategory: Category로 변경 가능해야 함.
+        if (typeof itemCategory !== 'string' || getCategory(itemCategory) === null) {
+            return false;
+        }
+
+        // itemName: 5글자 이상, 30글자 이하
+        if (typeof itemName !== 'string' || itemName.length < 5 || itemName.length > 30) {
+            return false;
+        }
+
+        // itemImages: 1개 이상, 5개 이하인 Buffer List
+        if (!Array.isArray(itemImages) || itemImages.length < 1 || itemImages.length > 5) {
+            return false;
+        }
+
+        // itemDescription: 10글자 이상, 300글자 이하
+        if (typeof itemDescription !== 'string' || itemDescription.length < 10 || itemDescription.length > 300) {
+            return false;
+        }
+
+        // itemPrice: 0 이상, 100,000,000,000 이하
+        if (typeof itemPrice !== 'number' || itemPrice < 0 || itemPrice > 100000000000) {
+            return false;
+        }
+
+        // itemFeelingOfUse: 0, 1, 2, 3, 4 중 하나
+        if (typeof itemFeelingOfUse !== 'number' || itemFeelingOfUse < 0 || itemFeelingOfUse > 4) {
+            return false;
+        }
+
+        // itemBarterPlace: String에서 Location으로 변경 가능해야하며, 모든 Field가 존재해야 함.
+        if (isValidateLocation(itemBarterPlace) === false) {
+            return false;
+        }
+
+        // itemStatus: 0, 1, 2 중 하나
+        if (typeof itemStatus !== 'number' || itemStatus < 0 || itemStatus > 2) {
+            return false;
+        }
+
+        return true;
+    }
+    catch (error) {
+        console.error(error);
+        return false;
+    }
+}
+
+/**
  * @name addItem
  * @description 아이템 추가 함수
  * 
@@ -221,7 +305,6 @@ const updateItem = async function (itemData) {
         itemFeelingOfUse,
         itemBarterPlace,
         itemStatus,
-        itemViews,
     } = itemData;
 
     // DB 연결
@@ -235,7 +318,7 @@ const updateItem = async function (itemData) {
     const Item = createItemModel(itemDB);
 
     // 파라미터 체크
-    const isParameterValid = await parameterCheckForAddItem(itemData);
+    const isParameterValid = await parameterCheckForUpdateItem(itemData);
 
     if (isParameterValid === false) {
         return { success: false, error: '파라미터가 올바르지 않습니다.' };

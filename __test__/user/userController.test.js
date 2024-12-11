@@ -911,11 +911,16 @@ describe('update-user-info', () => {
     expect(response.status).toBe(200);
     expect(response.body.failureReason).toBeUndefined();
 
-    const user = await SignupUser.findOne({ userID:getTestUpdateUserData(1, userBeforeUpdate.userUUID).userID });
+    const user = await SignupUser.findOne({ userID: getTestUpdateUserData(1, userBeforeUpdate.userUUID).userID });
 
     expect(user).not.toBeNull();
     expect(user.userNickName).toBe(getTestUpdateUserData(1, userBeforeUpdate.userUUID).userNickName);
     expect(user.userGender).toBe(userBeforeUpdate.userGender);
+    
+    // 선호 카테고리 변경이 잘 됐는 지 확인
+    const userFavoriteCategories = user.userFavoriteCategories;
+    const testFavoriteCategories = getTestUpdateUserData(1, userBeforeUpdate.userUUID).userFavoriteCategories;
+    expect(userFavoriteCategories.length).toBe(testFavoriteCategories.length);
   });
 
   it('등록되지 않은 사용자 정보로 정보 수정 요청을 보낸 경우, 에러 응답을 반환해야 한다.', async () => {
