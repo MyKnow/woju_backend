@@ -2,7 +2,7 @@
 
 // 필요한 모델 불러오기
 const { createItemModel } = require('../../server_item/models/itemModel');
-const { getCategory }  = require('../../server_item/models/categoryModel');
+const { getCategory }  = require('../../shared/models/categoryModel');
 const { isValidateLocation } = require('../models/locationModel');
 
 // 필요한 라이브러리 불러오기

@@ -8,7 +8,7 @@ const { generateToken } = require('../utils/auth');
 const { DBName } = require('../../shared/utils/db');
 
 // 필요한 모델 불러오기
-const Category = require('../../server_item/models/categoryModel');
+const Category = require('./categoryModel');
 
 // 상수로 고정된 기본값 정의
 const DEFAULT_GENDER = 'private';

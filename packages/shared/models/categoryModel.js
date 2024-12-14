@@ -79,6 +79,12 @@ const getCategory = (category) => {
     }
 }
 
+// 올바른 Category String인지 확인하는 함수 (getCategory 함수 활용)
+const isValidCategory = (category) => {
+    return getCategory(category) !== null;
+}
+
 // Category Enum을 외부에서 사용할 수 있도록 export
 module.exports = Category;
 module.exports.getCategory = getCategory;
+module.exports.isValidCategory = isValidCategory;

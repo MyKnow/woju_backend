@@ -4,7 +4,7 @@
 const mongoose = require('mongoose');
 
 // 필요한 모델 불러오기
-const { Category } = require('../models/categoryModel');
+const { Category } = require('../../shared/models/categoryModel');
 const { locationSchema } = require('../models/locationModel');
 
 // 필요한 Util 불러오기

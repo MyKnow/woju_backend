@@ -6,7 +6,7 @@ const express = require('express');
 
 // 필요한 Model 가져오기
 const { createItemModel } = require('../../packages/server_item/models/itemModel');
-const Category = require('../../packages/server_item/models/categoryModel');
+const Category = require('../../packages/shared/models/categoryModel');
 const { getTestLocationData } = require('../../packages/server_item/models/locationModel');
 const { getTestSignUpUserData } = require('../../packages/shared/models/userModel');
 
