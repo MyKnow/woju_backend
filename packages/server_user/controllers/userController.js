@@ -10,7 +10,7 @@ const { FailureReason } = require('../../shared/models/responseModel');  // 응�
 const { createTempUserIDModel } = require('../../shared/models/tempUserIDModel'); // 임시로 아이디를 저장하는 모델
 const { createUserModel } = require('../../shared/models/userModel'); // 최종적으로 사용자 정보를 저장하는 모델
 const { createTempPhoneNumberModel } = require('../../shared/models/tempPhoneNumberModel');  // 임시로 전화번호를 저장하는 모델
-const { isValidCategory } = require('../../shared/models/categoryModel');  // 카테고리 유효성 검사 함수 불러오기
+const { isValidCategory, isValidCategoryMap } = require('../../shared/models/categoryModel');  // 카테고리 유효성 검사 함수 불러오기
 
 // 필요한 서비스 불러오기
 const { getPolicyContentService, isValidVersion } = require('../services/policyService');  // 약관 내용 조회 함수 불러오기
@@ -602,17 +602,8 @@ exports.updateUserInfo = async (req, res) => {
       // userFavoriteCategories의 Map의 key는 카테고리 String, value는 선호도 Number여야 하며, 선호도는 0부터 N까지의 중복되지 않은 정수여야 함
       // userFavoriteCategories의 Key는 CategoryType에 있는 카테고리 중 하나여야 함
       // 입력 예시 :  userFavoriteCategories:  { furniture: 0, lifestyle: 1 }
-      if (userFavoriteCategories) {
-        if (typeof userFavoriteCategories === 'object') {
-          for (const key in userFavoriteCategories) {
-            if (isValidCategory(key) === false) {
-              return res.status(400).json({ failureReason: FailureReason.CATEGORY_NOT_FOUND, message: '카테고리가 올바르지 않습니다.' });
-            }
-            if (typeof userFavoriteCategories[key] !== 'number' || userFavoriteCategories[key] < 0) {
-              return res.status(400).json({ failureReason: FailureReason.CATEGORY_NOT_FOUND, message: '카테고리 선호도가 올바르지 않습니다.' });
-            }
-          }
-        }
+      if (!isValidCategoryMap(userFavoriteCategories)) {
+        return res.status(400).json({ failureReason: FailureReason.INVALID_PARAMETER, message: '카테고리 정보가 올바르지 않습니다.' });
       }
 
       // 사용자 정보 업데이트

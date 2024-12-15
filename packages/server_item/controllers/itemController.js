@@ -5,8 +5,9 @@ const { verifyUser } = require('../../shared/utils/auth');
 const { isMongoDBConnected } = require('../../shared/utils/db');
 
 // 필요한 서비스 불러오기
-const { addItem, parameterCheckForAddItem, getItemList, updateItem, getItemInfo, deleteItem } = require('../services/itemService');
+const { addItem, parameterCheckForAddItem, getUsersItemList, updateItem, getItemInfo, deleteItem, getItemListWithQuery } = require('../services/itemService');
 const { isExistUserUUID } = require('../../shared/services/userService');
+const e = require('express');
 
 /** # GET /health-check
  * @name healthCheck
@@ -34,7 +35,6 @@ exports.healthCheck = (req, res) => {
 
 /** # POST /item/add-item
  * @name addItem
- * 
  * @description 아이템 추가 API
  * 
  * @param {Object} req - Request 객체
@@ -123,8 +123,8 @@ exports.addItem = [
   },
 ];
 
-/** # GET /item/get-item-list
- * @name getItemList
+/** # GET /item/get-users-item-list
+ * @name getUsersItemList
  * @description 아이템 조회 API
  * 
  * @param {Object} req - Request 객체
@@ -140,7 +140,7 @@ exports.addItem = [
  * 
  * @security - JWT 토큰(Bearer Token) 필요
  */
-exports.getItemList = [
+exports.getUsersItemList = [
   verifyUser, // 미들웨어로 verifyUser를 추가
   async (req, res) => {
     try {
@@ -156,7 +156,7 @@ exports.getItemList = [
       }
 
       // 아이템 조회
-      const { itemList, error } = await getItemList(itemOwnerUUID); // 사용자의 아이템 목록 조회
+      const { itemList, error } = await getUsersItemList(itemOwnerUUID); // 사용자의 아이템 목록 조회
 
       // 결과 반환
       if (error === null) {
@@ -423,4 +423,92 @@ exports.getItemInfo = [
       });
     }
   }
+];
+
+
+/** # GET /item/get-item-list-with-query
+ * @name getItemListWithQuery
+ * @description 쿼리로 아이템 목록 조회 API
+ * 
+ * ### Path Parameters
+ * @param {Object} req - Request 객체
+ * @param {Object} res - Response 객체
+ * 
+ * ### Query Parameters Nullable
+ * @param {Number?} query.limit - 조회 개수 (Null인 경우 10)
+ * @param {Number?} query.page - 페이지 번호 (Null인 경우 1)
+ * @param {Number?} query.sort - 정렬 방식 (Null인 경우 생성일 내림차순, 1: 생성일 오름차순, -1: 생성일 내림차순, 2: 가격 오름차순, -2: 가격 내림차순)
+ * @param {String?} query.search - 검색어 (Null인 경우 전체)
+ * @param {Object?} query.categoryList - 카테고리 목록 (Map<String, Number>) (Null인 경우 전체)
+ * @param {String?} query.distanceLimit - 직선 거리 제한 (Null인 경우 전체)
+ * @param {Number?} query.priceMin - 최소 가격 (Null인 경우 전체)
+ * @param {Number?} query.priceMax - 최대 가격 (Null인 경우 전체)
+ * @param {Number?} query.feelingOfUseMin - 사용감 하한선 (Null인 경우 전체)
+ * @param {Number?} query.status - 아이템 상태 (Null인 경우 전체)
+ * 
+ * ### Returns
+ * @returns {List<Item>} itemList: 아이템 목록
+ * @returns {String?} error: 에러 메시지
+ * 
+ * ### Status Codes
+ * @returns {200} 아이템 조회 성공
+ * @returns {400} 요청 바디가 올바르지 않음
+ * @returns {500} 서버 에러
+ * 
+ * ### Security
+ * @security - JWT 토큰(Bearer Token) 필요
+ */
+exports.getItemListWithQuery = [
+  verifyUser, // 미들웨어로 verifyUser를 추가
+  async (req, res) => {
+    try {
+      const {
+        limit,
+        page,
+        sort,
+        search,
+        categoryList,
+        categoryMap,
+        distanceLimit,
+        priceMin,
+        priceMax,
+        feelingOfUseMin,
+        statusList
+      } = req.query;
+
+      // 아이템 목록 조회
+      const { itemList, error } = await getItemListWithQuery({
+        limit,
+        page,
+        sort,
+        search,
+        categoryList,
+        categoryMap,
+        distanceLimit,
+        priceMin,
+        priceMax,
+        feelingOfUseMin,
+        statusList
+      });
+
+      // 결과 반환
+      if (error === null) {
+        return res.status(200).json({
+          itemList,
+          error: null,
+        });
+      } else {
+        return res.status(400).json({
+          itemList: [],
+          error,
+        });
+      }
+    } catch (error) {
+      console.error('Error in getItemListWithQuery controller:', error);
+      return res.status(500).json({
+        itemList: [],
+        error: error.message,
+      });
+    }
+  },
 ];

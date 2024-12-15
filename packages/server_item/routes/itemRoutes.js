@@ -23,7 +23,7 @@ router.post('/add-item', itemController.addItem);
  * @name GET /item/get-users-item-list
  * @description 아이템 목록 조회 API
  */
-router.get('/get-item-list', itemController.getItemList);
+router.get('/get-users-item-list', itemController.getUsersItemList);
 
 /**
  * @name POST /item/update-item
@@ -43,6 +43,11 @@ router.delete('/delete-item', itemController.deleteItem);
  */
 router.get('/get-item-info', itemController.getItemInfo);
 
+/**
+ * @name GET /item/get-item-list-with-query
+ * @description 쿼리로 아이템 목록 조회 API
+ */
+router.get('/get-item-list-with-query', itemController.getItemListWithQuery);
 
 // Export the router
 module.exports = router;

@@ -41,7 +41,14 @@ const Category = {
     ETC: 'etc'
 };
 
-// String을 Enum으로 변환하는 함수
+/**
+ * @name getCategory
+ * @description 입력된 카테고리에 해당하는 Category Enum 반환
+ * 
+ * @param {String} category - 입력된 카테고리
+ * 
+ * @returns {Category} 입력된 카테고리에 해당하는 Category Enum
+ */
 const getCategory = (category) => {
     switch (category) {
         case 'electronics':
@@ -79,12 +86,99 @@ const getCategory = (category) => {
     }
 }
 
-// 올바른 Category String인지 확인하는 함수 (getCategory 함수 활용)
+/**
+ * @name isValidCategory
+ * @description 입력된 카테고리가 유효한지 확인
+ * 
+ * @param {String} category - 입력된 카테고리
+ * 
+ * @returns {Boolean} 유효한 카테고리인지 여부
+ */
 const isValidCategory = (category) => {
     return getCategory(category) !== null;
 }
 
+/**
+ * @name getAllCategories
+ * @description ALL을 제외한 모든 카테고리를 배열로 반환
+ * 
+ * @returns {Array<String>} 모든 카테고리 배열
+ */
+const getAllCategories = () => {
+    return [
+        Category.ELECTRONICS,
+        Category.FURNITURE,
+        Category.LIFESTYLE,
+        Category.FASHION,
+        Category.BOOK,
+        Category.LAYETTE,
+        Category.COSMETIC,
+        Category.SPORTS_EQUIPMENT,
+        Category.HOBBY_GOODS,
+        Category.ALBUM,
+        Category.CAR_GOODS,
+        Category.TICKET,
+        Category.PET_GOODS,
+        Category.PLANT,
+        Category.ETC
+    ];
+}
+
+/**
+ * @name isValidCategoryMap
+ * @description 입력된 카테고리 맵이 유효한지 확인
+ * 
+ * @param {Object} categoryMap - 입력된 카테고리 맵
+ * 
+ * @returns {Boolean} 유효한 카테고리 맵인지 여부
+ * 
+ * ### Note
+ * - categoryMap은 카테고리 String을 key로, 선호 순위를 value로 가지는 객체
+ * - categoryMap의 key는 유효한 카테고리여야 함
+ * - categoryMap의 value는 0 이상의 정수여야 하며, 0부터 N까지에서 0이 가장 높은 선호도를 의미하며, 중복된 값이 없어야 함
+ * - categoryMap이 유효한 경우 true, 그렇지 않은 경우 false 반환
+ */
+const isValidCategoryMap = (categoryMap) => {
+    const categories = getAllCategories();
+
+    if (typeof categoryMap === 'object') {
+        for (const key in categoryMap) {
+            // 카테고리가 유효한지 확인
+            if (!categories.includes(key)) {
+                return false;
+            }
+            // 선호도가 0 이상의 정수인지 확인
+            const parsedValue = parseInt(categoryMap[key]);
+
+            if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+                return false;
+            }
+        }
+        // 중복된 선호도 값이 있는지 확인
+        const values = Object.values(categoryMap);
+        const parsedValues = values.map(value => parseInt(value));
+        const uniqueValues = [...new Set(parsedValues)];
+
+        if (parsedValues.length !== uniqueValues.length) {
+            return false;
+        }
+
+        // 선호도가 0부터 N까지인지 확인
+        for (let i = 0; i < parsedValues.length; i++) {
+            if (!parsedValues.includes(i)) {
+                return false;
+            }
+        }
+
+    } else {
+        return false;
+    }
+    return true;
+}
+
 // Category Enum을 외부에서 사용할 수 있도록 export
-module.exports = Category;
+module.exports.Category = Category;
 module.exports.getCategory = getCategory;
 module.exports.isValidCategory = isValidCategory;
+module.exports.getAllCategories = getAllCategories;
+module.exports.isValidCategoryMap = isValidCategoryMap;
