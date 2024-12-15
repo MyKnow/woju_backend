@@ -137,4 +137,5 @@ module.exports = {
   getTestUpdateUserData,
   getTestPhoneNumberUpdateData,
   getTokenOfUserData,
+  userSchema,
 };

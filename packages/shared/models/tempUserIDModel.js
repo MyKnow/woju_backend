@@ -35,4 +35,7 @@ const createTempUserIDModel = (db) => {
   return db.model(DBName.TEMP_USER_ID, tempUserID);
 }
 
-module.exports = { createTempUserIDModel };
+module.exports = { 
+  createTempUserIDModel,
+  tempUserID,
+ };

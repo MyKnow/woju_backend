@@ -88,4 +88,5 @@ module.exports = {
   createPolicyModel,
   PolicyType,
   CountryType,
+  policySchema,
 };

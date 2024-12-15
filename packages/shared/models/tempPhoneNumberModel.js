@@ -50,4 +50,4 @@ const createTempPhoneNumberModel = (db) => {
 }
 
 
-module.exports = { createTempPhoneNumberModel };
+module.exports = { createTempPhoneNumberModel, tempPhoneNumber };

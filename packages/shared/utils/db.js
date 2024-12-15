@@ -24,6 +24,7 @@ const connectDB = async function (dbName, dbUri) {
   try {
     if (process.env.NODE_ENV === 'test') {
       // MongoMemoryServer 인스턴스를 생성하고 시작함
+      console.log('Using MongoMemoryServer: ', dbName);
       mongoServer = await MongoMemoryServer.create();
       uri = mongoServer.getUri();
     } else {
