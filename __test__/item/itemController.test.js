@@ -35,7 +35,7 @@ describe('GET /api/item', () => {
     });
 
     it('DB가 연결된 상태일 때, 200 상태 코드를 반환한다.', async () => {
-        const db = await connectDB('Item', process.env.MONGO_ITEM_DB_URI);
+        const db = await connectDB(DBType.ITEM);
 
         // 요청
         const response = await request(app).get('/api/item/health-check');
@@ -46,7 +46,7 @@ describe('GET /api/item', () => {
 
     it('DB가 연결 해제된 상태일 때, 500 상태 코드를 반환한다.', async () => {
         // User DB 연결 해제
-        await disconnectDB('Item');
+        await disconnectDB(DBType.ITEM);
 
         // 요청
         const response = await request(app).get('/api/item/health-check');

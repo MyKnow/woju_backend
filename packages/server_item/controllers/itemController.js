@@ -2,7 +2,7 @@
 
 // 필요한 util 불러오기
 const { verifyUser } = require('../../shared/utils/auth');
-const { isMongoDBConnected } = require('../../shared/utils/db');
+const { isMongoDBConnected, DBType } = require('../../shared/utils/db');
 
 // 필요한 서비스 불러오기
 const { addItem, parameterCheckForAddItem, getUsersItemList, updateItem, getItemInfo, deleteItem, getItemListWithQuery } = require('../services/itemService');
@@ -20,7 +20,7 @@ const e = require('express');
  * @returns {Object} - API 응답 결과
  */
 exports.healthCheck = (req, res) => {
-  const itemDB = isMongoDBConnected('Item');
+  const itemDB = isMongoDBConnected(DBType.ITEM);
 
   if (itemDB) {
     return res.status(200).json({

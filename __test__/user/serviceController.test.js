@@ -6,7 +6,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 // 필요한 Util을 불러옵니다.
-const { connectDB, disconnectDB } = require('../../packages/shared/utils/db');
+const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
 
 // 필요한 Router를 불러옵니다.
 const serviceRoutes = require('../../packages/server_user/routes/serviceRoutes');
@@ -35,14 +35,14 @@ beforeEach(async () => {
 describe('서버 연결 상태 확인 API', () => {
     it('DB가 정상적으로 연결된 상태에서는 200을 반환한다.', async () => {
         // 테스트용 MongoDB 연결
-        await connectDB('User', process.env.MONGO_USER_DB_URI);
+        await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
         const response = await request(app).get('/api/service/check-connection-status');
         expect(response.statusCode).toBe(200);
     });
 
     it('DB가 정상적으로 연결되지 않은 상태에서는 500과 DB 상태(에러) 반환한다.', async () => {
         // 테스트용 MongoDB 연결 해제
-        await disconnectDB('User');
+        await disconnectDB(DBType.USER);
 
         const response = await request(app).get('/api/service/check-connection-status');
         expect(response.statusCode).toBe(500);

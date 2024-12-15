@@ -1,9 +1,8 @@
 // controllers/serviceController.js
 
 // 필요한 Util 불러오기
-const { isMongoDBConnected } = require('../../shared/utils/db');
+const { isMongoDBConnected, DBType } = require('../../shared/utils/db');
 const { generateToken, } = require('../../shared/utils/auth');
-const { id } = require('date-fns/locale');
 
 /** DB 연결 상태 확인 API
  * 
@@ -15,7 +14,7 @@ const { id } = require('date-fns/locale');
  */
 exports.status = (req, res) => {
   // DB 연결 상태 확인
-  const mongooseState = isMongoDBConnected('User');
+  const mongooseState = isMongoDBConnected(DBType.USER);
 
   if (mongooseState) {
     return res.status(200).json({

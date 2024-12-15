@@ -16,6 +16,18 @@ const connections = {};
  * @returns Promise connection - Mongoose Connection 객체
  */
 const connectDB = async function (dbName, dbUri) {
+  // dbName이 DBType에 정의된 값이 아닌 경우, 에러를 발생시킴
+  if (!Object.values(DBType).includes(dbName)) {
+    console.error('Invalid DB Type:', dbName);
+    throw new Error('Invalid DB Type: ' + dbName);
+  }
+
+  // Test 환경이 아닌데 dbUri가 없는 경우, 에러를 발생시킴
+  if (process.env.NODE_ENV !== 'test' && !dbUri) {
+    console.error('DB URI is missing');
+    throw new Error('DB URI is missing');
+  }
+  
   // 이미 연결된 경우, 연결을 유지함
   if (connections[dbName]) {
     return connections[dbName];
@@ -24,7 +36,6 @@ const connectDB = async function (dbName, dbUri) {
   try {
     if (process.env.NODE_ENV === 'test') {
       // MongoMemoryServer 인스턴스를 생성하고 시작함
-      console.log('Using MongoMemoryServer: ', dbName);
       mongoServer = await MongoMemoryServer.create();
       uri = mongoServer.getUri();
     } else {

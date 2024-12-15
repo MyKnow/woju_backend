@@ -18,7 +18,7 @@ const { isMongoDBConnected, connectDB, DBType } = require('../../shared/utils/db
  * @returns {boolean} - DB 연결 상태
  */
 exports.healthCheckForItemDB = () => {
-  return isMongoDBConnected(DBType.ITEM);
+    return isMongoDBConnected(DBType.ITEM);
 }
 
 /**

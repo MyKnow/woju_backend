@@ -17,11 +17,12 @@ const { createPolicyModel, PolicyType, CountryType } = require('../../packages/s
 
 // 필요한 Router 불러오기
 const userRoutes = require('../../packages/server_user/routes/userRoutes');
-const { id } = require('date-fns/locale');
 
 // 테스트용 Express 앱 설정
 const app = express();
 app.use(express.json());
+
+// 라우터 설정
 app.use('/api/user', userRoutes);
 
 // 각 DB 선언
@@ -59,8 +60,8 @@ let Policy;
 beforeAll(async () => {
   // 병렬 처리를 위해 Promise.all 사용
   await Promise.all([
-    userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI),
-    policyDB = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI),
+    userDB = await connectDB(DBType.USER),
+    policyDB = await connectDB(DBType.POLICY),
   ]);
 
   TempPhoneNumber = createTempPhoneNumberModel(userDB);
@@ -81,10 +82,10 @@ afterAll(async () => {
 beforeEach(async () => {
   // 테스트 전 TempPhoneNumber, TempUserID, SignupUser, Policy Collection 초기화
   await Promise.all([
-    TempPhoneNumber.deleteMany({}),
-    TempUserID.deleteMany({}),
-    SignupUser.deleteMany({}),
-    Policy.deleteMany({})
+    await TempPhoneNumber.deleteMany({}),
+    await TempUserID.deleteMany({}),
+    await SignupUser.deleteMany({}),
+    await Policy.deleteMany({})
   ]);
 });
 
@@ -166,7 +167,7 @@ const updatePasswordFunction = async (idIndex, oldPwdIndex, newPwdIndex) => {
   return await request(app)
     .post('/api/user/update-user-password')
     .send({ 
-      userID: id ? getTestSignUpUserData(idIndex).userID : null,
+      userID: idIndex ? getTestSignUpUserData(idIndex).userID : null,
       oldPassword: oldPwdIndex ? getTestSignUpUserData(oldPwdIndex).userPassword : null,
       newPassword: newPwdIndex ? getTestSignUpUserData(newPwdIndex).userPassword : null
     });
