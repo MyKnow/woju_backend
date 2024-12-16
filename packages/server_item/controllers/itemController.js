@@ -5,18 +5,19 @@ const { verifyUser } = require('../../shared/utils/auth');
 const { isMongoDBConnected, DBType } = require('../../shared/utils/db');
 
 // 필요한 서비스 불러오기
-const { addItem, parameterCheckForAddItem, getUsersItemList, updateItem, getItemInfo, deleteItem, getItemListWithQuery } = require('../services/itemService');
+const { addItem, parameterCheckForAddItem, getUsersItemList, updateItem, getItemInfo, deleteItem, getItemListWithQuery, requestLikeItem, requestUnlikeItem, requestMatchItem } = require('../services/itemService');
 const { isExistUserUUID } = require('../../shared/services/userService');
 const e = require('express');
 
 /** # GET /health-check
  * @name healthCheck
- * 
  * @description 서버 상태 확인 API
  * 
+ * ### Path Parameters
  * @param {Object} req - Request 객체
  * @param {Object} res - Response 객체
  * 
+ * ### Returns
  * @returns {Object} - API 응답 결과
  */
 exports.healthCheck = (req, res) => {
@@ -37,15 +38,20 @@ exports.healthCheck = (req, res) => {
  * @name addItem
  * @description 아이템 추가 API
  * 
+ * ### Path Parameters
  * @param {Object} req - Request 객체
  * @param {Object} res - Response 객체
- * 
+ *
+ * ### Return
  * @returns {Object} - API 응답 결과
- * - 200: 아이템 추가 성공
- * - 400: 요청 바디가 올바르지 않음
- * - 402: 존재하지 않는 사용자
- * - 500: 서버 에러
  * 
+ * ### Status Codes
+ * @returns {200}: 아이템 추가 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {500}: 서버 에러
+ * 
+ * ### Security
  * @security - JWT 토큰(Bearer Token) 필요
  */
 exports.addItem = [
@@ -127,17 +133,22 @@ exports.addItem = [
  * @name getUsersItemList
  * @description 아이템 조회 API
  * 
+ * ### Path Parameters
  * @param {Object} req - Request 객체
  * @param {Object} res - Response 객체
  * 
+ * ### Returns
  * @returns {Object} - API 응답 결과
  * - List<Item> itemList: 사용자의 아이템 목록
  * - String error: 에러 메시지
  * 
- * - 200: 아이템 조회 성공
- * - 400: 요청 바디가 올바르지 않음
- * - 500: 서버 에러
+  * ### Status Codes
+ * @returns {200}: 아이템 조회 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {500}: 서버 에러
  * 
+ * ### Security
  * @security - JWT 토큰(Bearer Token) 필요
  */
 exports.getUsersItemList = [
@@ -183,18 +194,23 @@ exports.getUsersItemList = [
  * @name updateItem
  * @description 아이템 수정 API
  * 
+ * ### Path Parameters
  * @param {Object} req - Request 객체
  * @param {Object} res - Response 객체
  * 
+ * ### Returns
  * @returns {Object} - API 응답 결과
  * - boolean success: 성공 여부
  * - String error: 에러 메시지
- * - 200: 아이템 수정 성공
- * - 400: 요청 바디가 올바르지 않음
- * - 402: 존재하지 않는 사용자
- * - 404: 존재하지 않는 아이템
- * - 500: 서버 에러
  * 
+  * ### Status Codes
+ * @returns {200}: 아이템 수정 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {404}: 존재하지 않는 아이템
+ * @returns {500}: 서버 에러
+ * 
+ * ### Security
  * @security - JWT 토큰(Bearer Token) 필요
  */
 exports.updateItem = [
@@ -281,19 +297,23 @@ exports.updateItem = [
  * @name deleteItem
  * @description 아이템 삭제 API
  * 
+ * ### Path Parameters
  * @param {Object} req - Request 객체
  * @param {Object} res - Response 객체
  * 
+ * ### Returns
  * @returns {Object} - API 응답 결과
  * - boolean success: 성공 여부
  * - String error: 에러 메시지
  * 
- * - 200: 아이템 삭제 성공
- * - 400: 요청 바디가 올바르지 않음
- * - 402: 존재하지 않는 사용자
- * - 404: 존재하지 않는 아이템
- * - 500: 서버 에러
+  * ### Status Codes
+ * @returns {200}: 아이템 삭제 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {404}: 존재하지 않는 아이템
+ * @returns {500}: 서버 에러
  * 
+ * ### Security
  * @security - JWT 토큰(Bearer Token) 필요
  * 
  */
@@ -367,18 +387,23 @@ exports.deleteItem = [
  * @name getItemInfo
  * @description 아이템 조회 API
  * 
+ * ### Path Parameters
  * @param {Object} req - Request 객체
  * @param {Object} res - Response 객체
  * 
+ * ### Returns
  * @returns {Object} - API 응답 결과
  * - Item item: 아이템 정보 객체
  * - String error: 에러 메시지
  * 
- * - 200: 아이템 조회 성공
- * - 400: 요청 바디가 올바르지 않음
- * - 404: 존재하지 않는 아이템
- * - 500: 서버 에러
+ * ### Status Codes
+ * @returns {200}: 아이템 조회 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {404}: 존재하지 않는 아이템
+ * @returns {500}: 서버 에러
  * 
+ * ### Security
  * @security - JWT 토큰(Bearer Token) 필요
  */
 exports.getItemInfo = [
@@ -453,6 +478,7 @@ exports.getItemInfo = [
  * ### Status Codes
  * @returns {200} 아이템 조회 성공
  * @returns {400} 요청 바디가 올바르지 않음
+ * @returns {402} 존재하지 않는 사용자
  * @returns {500} 서버 에러
  * 
  * ### Security
@@ -476,8 +502,11 @@ exports.getItemListWithQuery = [
         statusList
       } = req.query;
 
+      const userUUID = req.userUUID;
+
       // 아이템 목록 조회
       const { itemList, error } = await getItemListWithQuery({
+        userUUID,
         limit,
         page,
         sort,
@@ -507,6 +536,217 @@ exports.getItemListWithQuery = [
       console.error('Error in getItemListWithQuery controller:', error);
       return res.status(500).json({
         itemList: [],
+        error: error.message,
+      });
+    }
+  },
+];
+
+/** # POST /item/request-like-item
+ * @name requestLikeItem
+ * @description 아이템 좋아요 신청 API
+ * 
+ * ### Path Parameters
+ * @param {Object} req - Request 객체
+ * @param {Object} res - Response 객체
+ * 
+ * ### RequestBody
+ * @param {String} myItemUUID - 아이템 UUID
+ * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
+ * 
+ * ### Returns
+ * @returns {Object} - API 응답 결과
+ * 
+ * ### Status Codes
+ * @returns {200}: 아이템 좋아요 신청 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {500}: 서버 에러
+ * 
+ * ### Security
+ * @security - JWT 토큰(Bearer Token) 필요
+ */
+exports.requestLikeItem = [
+  verifyUser, // 미들웨어로 verifyUser를 추가
+  async (req, res) => {
+    try {
+      const { myItemUUID, targetItemUUID } = req.body;
+      const myUserUUID = req.userUUID;
+
+      // 사용자 UUID 체크
+      if (await isExistUserUUID(myUserUUID) === false) {
+        return res.status(402).json({
+          success: false,
+          error: '존재하지 않는 사용자입니다.',
+        });
+      }
+
+      // 아이템 좋아요 신청
+      const result = await requestLikeItem(
+        myUserUUID,
+        myItemUUID,
+        targetItemUUID
+      );
+
+      // 결과 반환
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error('Error in requestLikeItem controller:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  },
+];
+
+/** # POST /item/request-unlike-item
+ * @name requestUnlikeItem
+ * @description 아이템 싫어요 신청 API
+ * 
+ * ### Path Parameters
+ * @param {Object} req - Request 객체
+ * @param {Object} res - Response 객체
+ * 
+ * ### RequestBody
+ * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
+ * 
+ * ### Returns
+ * @returns {Object} - API 응답 결과
+ * 
+ * ### Status Codes
+ * @returns {200}: 아이템 싫어요 신청 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {404}: 존재하지 않는 아이템
+ * @returns {500}: 서버 에러
+ * 
+ * ### Security
+ * @security - JWT 토큰(Bearer Token) 필요
+ */
+exports.requestUnlikeItem = [
+  verifyUser, // 미들웨어로 verifyUser를 추가
+  async (req, res) => {
+    try {
+      const { targetItemUUID } = req.body;
+      const myUserUUID = req.userUUID;
+
+      // 사용자 UUID 체크
+      if (await isExistUserUUID(myUserUUID) === false) {
+        return res.status(402).json({
+          success: false,
+          error: '존재하지 않는 사용자입니다.',
+        });
+      }
+
+      // 아이템 싫어요 신청
+      const result = await requestUnlikeItem(
+        myUserUUID,
+        targetItemUUID,
+      );
+
+      // 결과 반환
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error('Error in requestUnlikeItem controller:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  },
+];
+
+/** # POST /item/request-match-item
+ * @name requestMatchItem
+ * @description 아이템 매칭 신청 API
+ * 
+ * ### Path Parameters
+ * @param {Object} req - Request 객체
+ * @param {Object} res - Response 객체
+ * 
+ * ### RequestBody
+ * @param {String} myItemUUID - 아이템 UUID
+ * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
+ * 
+ * ### Returns
+ * @returns {Object} - API 응답 결과
+ * 
+ * ### Status Codes
+ * @returns {200}: 아이템 매칭 신청 성공
+ * @returns {400}: 요청 바디가 올바르지 않음
+ * @returns {402}: 존재하지 않는 사용자
+ * @returns {404}: 존재하지 않는 아이템
+ * @returns {500}: 서버 에러
+ * 
+ * ### Security
+ * @security - JWT 토큰(Bearer Token) 필요
+ */
+exports.requestMatchItem = [
+  verifyUser, // 미들웨어로 verifyUser를 추가
+  async (req, res) => {
+    try {
+      const { myItemUUID, targetItemUUID } = req.body;
+      const myUserUUID = req.userUUID;
+
+      // 사용자 UUID 체크
+      if (await isExistUserUUID(myUserUUID) === false) {
+        return res.status(402).json({
+          success: false,
+          error: '존재하지 않는 사용자입니다.',
+        });
+      }
+
+      // 아이템 존재 여부 체크
+      const item = await getItemInfo(myItemUUID);
+
+      if (item === null || item === undefined) {
+        return res.status(404).json({
+          success: false,
+          error: '존재하지 않는 아이템입니다.',
+        });
+      }
+
+      // 아이템 매칭 신청
+      const result = await requestMatchItem({
+        myUserUUID,
+        myItemUUID,
+        targetItemUUID,
+      });
+
+      // 결과 반환
+      if (result.success) {
+        return res.status(200).json({
+          success: true,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: result.error,
+        });
+      }
+    } catch (error) {
+      console.error('Error in requestMatchItem controller:', error);
+      return res.status(500).json({
+        success: false,
         error: error.message,
       });
     }

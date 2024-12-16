@@ -31,7 +31,9 @@ const { DBName } = require('../../shared/utils/db');
  * @param {Date} updatedAt - 아이템의 수정일, Non-Null, Default: 현재 시간
  * @param {int} itemStatus - 아이템의 상태, 0: 예약없음, 1: 예약중, 2: 교환완료, Non-Null, Default: 0
  * @param {int} itemViews - 아이템의 조회수, Non-Null, Default: 0
- * @param {List<String>} itemLikedUsers - 아이템의 매칭 신청 유저 리스트, Non-Null, Default: []
+ * @param {Map<String, String>} itemLikedUsers - 아이템의 매칭 신청 유저 목록(유저 UUID, 아이템 UUID), Non-Null, Default: []
+ * @param {List<String>} itemUnlikedUsers - 아이템의 매칭 거절 유저 목록(유저 UUID), Non-Null, Default: []
+ * @param {Map<String, String>} itemMatchedUsers - 아이템의 매칭 완료 유저 목록(유저 UUID, 아이템 UUID), Non-Null, Default: []
  */
 const itemSchema = new mongoose.Schema({
     // Required
@@ -47,7 +49,9 @@ const itemSchema = new mongoose.Schema({
     // Optional
     itemStatus: { type: Number, default: 0 },
     itemViews: { type: Number, default: 0 },
-    itemLikedUsers: { type: [String], default: [] },
+    itemLikedUsers: { type: Map, of: String, default: {} },
+    itemUnlikedUsers: { type: [String], default: [] },
+    itemMatchedUsers: { type: Map, of: String, default: {} },
 }, {
     timestamps: true,
 });

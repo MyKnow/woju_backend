@@ -62,7 +62,6 @@ beforeAll(async () => {
 
 // 테스트 종료 후 DB 연결 해제
 afterAll(async () => {
-    console.log('Closing DB Connections');
     await disconnectDB(DBType.ITEM);
     await disconnectDB(DBType.USER);
 });
@@ -83,7 +82,7 @@ beforeEach(async () => {
  */
 const getUserToken = async (index) => {
     // 테스트용 유저 생성
-    const signupResponse = await request(app)
+    await request(app)
         .post('/api/user/signup')
         .send(getTestSignUpUserData(index));
 
@@ -93,7 +92,6 @@ const getUserToken = async (index) => {
         userPassword: getTestSignUpUserData(index).userPassword,
         userDeviceID: getTestSignUpUserData(index).userDeviceID,
     });
-
     return loginResponse.body.token;
 }
 
@@ -968,5 +966,619 @@ describe('GET /api/item/get-item-list-with-query', () => {
 
         // 응답 코드 확인
         expect(response.statusCode).toBe(401);
+    });
+
+    it('itemLikedUsers, itemUnlikedUsers, itemBarterUsers에 검색하는 User의 userUUID가 포함되는 결과는 제외하고 검색한다.', async () => {
+        const userToken = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+        const userToken3 = await getUserToken(3);
+
+        // 두 유저의 아이템을 2개씩 생성
+        await addItemFunction(userToken, 1);
+        await addItemFunction(userToken, 2);
+        await addItemFunction(userToken2, 3);
+        await addItemFunction(userToken2, 4);
+
+        // 첫번째 유저의 아이템 목록 조회
+        const firstItemResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken}`);
+        expect(firstItemResponse.statusCode).toBe(200);
+
+        // 두번째 유저의 아이템 목록 조회
+        const secondItemResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(secondItemResponse.statusCode).toBe(200);
+
+        // 첫번째 유저가 두번째 유저의 아이템을 좋아요 요청
+        const likeItemResponse = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: firstItemResponse.body.itemList[0].itemUUID,
+                targetItemUUID: secondItemResponse.body.itemList[0].itemUUID,
+            });
+        expect(likeItemResponse.statusCode).toBe(200);
+
+        // 첫번째 유저가 전체 아이템 검색
+        const response = await request(app)
+            .get('/api/item/get-item-list-with-query')
+            .set('Authorization', `Bearer ${userToken}`)
+            .query({ });
+        expect(response.statusCode).toBe(200);
+
+        // 응답 데이터 확인 (본인 아이템, 좋아요 한 아이템, 싫어요 한 아이템, 교환 요청한 아이템이 포함되어 있으면 안됨)
+        let firstUserCount = 0;
+        let secondUserCount = 0;
+
+        response.body.itemList.forEach((item) => {
+            if (item.itemOwnerUUID === firstItemResponse.body.itemList[0].itemOwnerUUID) {
+                firstUserCount++;
+            }
+            if (item.itemOwnerUUID === secondItemResponse.body.itemList[0].itemOwnerUUID) {
+                secondUserCount++;
+            }
+            // 본인 아이템이 포함되어 있으면 안됨
+            expect(item.itemOwnerUUID).not.toBe(firstItemResponse.body.itemList[0].itemOwnerUUID);
+
+            // 좋아요 한 아이템이 포함되어 있으면 안됨
+            Object.entries(item.itemLikedUsers).forEach(([key, value]) => {
+                expect(key).not.toBe(firstItemResponse.body.itemList[0].itemOwnerUUID);
+            });
+            
+            // 싫어요 한 아이템이 포함되어 있으면 안됨
+            Object.entries(item.itemUnlikedUsers).forEach(([key, value]) => {
+                expect(key).not.toBe(firstItemResponse.body.itemList[0].itemOwnerUUID);
+            });
+
+            // 교환 요청한 아이템이 포함되어 있으면 안됨
+            Object.entries(item.itemMatchedUsers).forEach(([key, value]) => {
+                expect(key).not.toBe(firstItemResponse.body.itemList[0].itemOwnerUUID);
+            });
+        });
+        expect(firstUserCount).toBe(0);
+        expect(secondUserCount).toBe(1);
+
+
+        // 두번째 유저가 첫번째 유저의 아이템을 싫어요 요청
+        const unlikeItemResponse = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .send({
+                targetItemUUID: firstItemResponse.body.itemList[1].itemUUID,
+            });
+        expect(unlikeItemResponse.statusCode).toBe(200);
+
+        // 두번째 유저가 전체 아이템 검색
+        const response2 = await request(app)
+            .get('/api/item/get-item-list-with-query')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ });
+        expect(response2.statusCode).toBe(200);
+
+        // 응답 데이터 확인 (본인 아이템, 좋아요 한 아이템, 싫어요 한 아이템, 교환 요청한 아이템이 포함되어 있으면 안됨)
+        let firstUserCountOfResponse2 = 0;
+        let secondUserCountResponse2 = 0;
+        response2.body.itemList.forEach((item) => {
+            if (item.itemOwnerUUID === firstItemResponse.body.itemList[0].itemOwnerUUID) {
+                firstUserCountOfResponse2++;
+            }
+            if (item.itemOwnerUUID === secondItemResponse.body.itemList[0].itemOwnerUUID) {
+                secondUserCountResponse2++;
+            }
+            // 본인 아이템이 포함되어 있으면 안됨
+            expect(item.itemOwnerUUID).not.toBe(secondItemResponse.body.itemList[0].itemOwnerUUID);
+
+            // 좋아요 한 아이템이 포함되어 있으면 안됨
+            Object.entries(item.itemLikedUsers).forEach(([key, value]) => {
+                expect(key).not.toBe(secondItemResponse.body.itemList[0].itemOwnerUUID);
+            });
+            
+            // 싫어요 한 아이템이 포함되어 있으면 안됨
+            Object.entries(item.itemUnlikedUsers).forEach(([key, value]) => {
+                expect(key).not.toBe(secondItemResponse.body.itemList[0].itemOwnerUUID);
+            });
+
+            // 교환 요청한 아이템이 포함되어 있으면 안됨
+            Object.entries(item.itemMatchedUsers).forEach(([key, value]) => {
+                expect(key).not.toBe(secondItemResponse.body.itemList[0].itemOwnerUUID);
+            });
+        });
+        expect(firstUserCountOfResponse2).toBe(1);
+        expect(secondUserCountResponse2).toBe(0);
+
+        // 세번째 유저가 전체 아이템 검색
+        const response3 = await request(app)
+            .get('/api/item/get-item-list-with-query')
+            .set('Authorization', `Bearer ${userToken3}`)
+            .query({ });
+        expect(response3.statusCode).toBe(200);
+
+        // 응답 데이터 확인 (모든 아이템이 포함되어 있어야 함)
+        // 모든 아이템을 읽어서 첫번째, 두번째 유저의 아이템이 포함되어 있는 지 확인
+        let firstUserCountOfResponse3 = 0;
+        let secondUserCountResponse3 = 0;
+        response3.body.itemList.forEach((item) => {
+            if (item.itemOwnerUUID === firstItemResponse.body.itemList[0].itemOwnerUUID) {
+                firstUserCountOfResponse3++;
+            }
+            if (item.itemOwnerUUID === secondItemResponse.body.itemList[0].itemOwnerUUID) {
+                secondUserCountResponse3++;
+            }
+        });
+
+        expect(firstUserCountOfResponse3).toBe(2);
+        expect(secondUserCountResponse3).toBe(2);
+    });
+});
+
+// POST /api/item/request-like-item API 테스트
+describe('POST /api/item/request-like-item', () => {
+    it('정상적으로 아이템 좋아요 요청이 되면 200 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템을 좋아요 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // getItemInfo 요청
+        const getItemInfoResponse = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: targetItemUUID });
+        expect(getItemInfoResponse.statusCode).toBe(200);
+
+        for (const [_, value] of Object.entries(getItemInfoResponse.body.item.itemLikedUsers)) {
+            // 좋아요 요청한 ItemUUID가 정확한지 확인
+            expect(value === myItemUUID).toBe(true);
+        }
+    });
+
+    it('Parameter Validation에 실패하면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 요청, 테스트를 위해 데이터를 누락시킴
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('해당 아이템이 없으면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: 'testItemUUID',
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('해당 아이템의 소유자가 아니면 400 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저 생성
+        const userToken3 = await getUserToken(3);
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken3}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('자신의 아이템에 좋아요 요청을 하면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 아이템 추가
+        await addItemFunction(userToken, 1);
+
+        // 내 아이템 목록 조회
+        const getUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken}`);
+        expect(getUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const itemUUID = getUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: itemUUID,
+                targetItemUUID: itemUUID,
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('Token이 없으면 401 상태 코드를 반환한다.', async () => {
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .send({ myItemUUID: 'testItemUUID' });
+        expect(response.statusCode).toBe(401);
+    });
+
+    it('Token의 userUUID가 DB에 없으면 402 상태 코드를 반환한다.', async () => {
+        const userToken = generateToken("USER", { userUUID: 'notExistUserUUID'});
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: 'testItemUUID',
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(402);
+    });
+
+    it('이미 좋아요 요청을 한 아이템이어도 200 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템을 좋아요 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // 다시 요청
+        const response2 = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response2.statusCode).toBe(200);
+    });
+
+    it('이미 Unlike 요청을 한 아이템이면, Like로 전환 후 200 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템을 좋아요 요청
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // 다시 Like 요청
+        const response2 = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response2.statusCode).toBe(200);
+
+        // getItemInfo 요청
+        const getItemInfoResponse = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: targetItemUUID });
+
+        // itemLikedUsers 길이가 증가했는지 확인
+        const itemLikedUsersLength = Object.entries(getItemInfoResponse.body.item.itemLikedUsers).length;
+        expect(itemLikedUsersLength).toBe(1);
+
+        // itemUnlikedUsers 길이가 감소했는지 확인
+        expect(getItemInfoResponse.body.item.itemUnlikedUsers.length).toBe(0);
+    });
+
+});
+
+// POST /api/item/request-unlike-item API 테스트
+describe('POST /api/item/request-unlike-item', () => {
+    it('정상적으로 아이템 unlike 요청이 되면 200 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템에 Unlike 요청
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // getItemInfo 요청
+        const getItemInfoResponse = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: targetItemUUID });
+        expect(getItemInfoResponse.statusCode).toBe(200);
+
+        // itemUnlikedUsers 길이가 증가했는지 확인
+        expect(getItemInfoResponse.body.item.itemUnlikedUsers.length).toBe(1);
+    });
+
+    it('이미 Like 요청을 한 아이템이면 400 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템을 좋아요 요청
+        const response = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // 다시 Unlike 요청
+        const response2 = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response2.statusCode).toBe(400);
+    });
+
+    it('이미 Unlike 요청을 한 아이템이어도 200 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템에 Unlike 요청
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // 다시 요청
+        const response2 = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response2.statusCode).toBe(200);
+
+        // UnLike 길이가 변함 없는지 확인
+        const getItemInfoResponse = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: targetItemUUID });
+
+        // itemUnlikedUsers 길이가 증가했는지 확인
+        expect(getItemInfoResponse.body.item.itemUnlikedUsers.length).toBe(1);
+    });
+
+    it('Parameter Validation에 실패하면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 요청, 테스트를 위해 데이터를 누락시킴
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('해당 아이템이 없으면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('토큰이 없으면 401 상태 코드를 반환한다.', async () => {
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .send({ targetItemUUID: 'testItemUUID' });
+        expect(response.statusCode).toBe(401);
+    });
+
+    it('Token의 userUUID가 DB에 없으면 402 상태 코드를 반환한다.', async () => {
+        const userToken = generateToken("USER", { userUUID: 'notExistUserUUID'});
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-unlike-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(402);
     });
 });

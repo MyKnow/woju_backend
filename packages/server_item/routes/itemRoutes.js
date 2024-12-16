@@ -49,5 +49,23 @@ router.get('/get-item-info', itemController.getItemInfo);
  */
 router.get('/get-item-list-with-query', itemController.getItemListWithQuery);
 
+/**
+ * @name POST /item/request-like-item
+ * @description 아이템 좋아요 신청 API
+ */
+router.post('/request-like-item', itemController.requestLikeItem);
+
+/**
+ * @name POST /item/request-unlike-item
+ * @description 아이템 싫어요 신청 API
+ */
+router.post('/request-unlike-item', itemController.requestUnlikeItem);
+
+/**
+ * @name POST /item/request-match-item
+ * @description 아이템 매칭 신청 API
+ */
+router.post('/request-match-item', itemController.requestMatchItem);
+
 // Export the router
 module.exports = router;

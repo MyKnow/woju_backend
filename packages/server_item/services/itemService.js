@@ -368,7 +368,6 @@ const getItemInfo = async function (itemUUID) {
         if (!item) {
             return null;
         }
-
         return item;
     } catch (error) {
         console.error(error);
@@ -410,6 +409,14 @@ const deleteItem = async function (itemUUID) {
  * @name getItemListWithQuery
  * @description 홈 화면에 보여줄 아이템 목록 조회 함수
  * 
+ * ### Notes
+ * - 카테고리 선호도 맵이 존재하는 경우, 사용자 선호도에 따라 아이템을 필터링하여 조회
+ * - 카테고리 선호도 맵이 없는 경우, 전체 아이템을 조회
+ * - 조회 시, 조회하는 User의 UUID가 Item의 itemLikedUsers, itemUnlikedUsers, itemMatchedUsers에 있는 경우, 해당 아이템은 제외하고 조회함.
+ * 
+ * ### Query Parameters
+ * @param {Number} query.userUUID - 조회를 요청한 사용자 UUID
+ * 
  * ### Query Parameters Nullable
  * @param {Number?} query.limit - 조회 개수 (Null인 경우 10)
  * @param {Number?} query.page - 페이지 번호 (Null인 경우 1)
@@ -441,6 +448,7 @@ const getItemListWithQuery = async function (query) {
 
     // 쿼리 파라미터 초기화 및 기본값 설정
     const {
+        userUUID,           // 사용자 UUID (필수)
         limit = 10,         // 페이지당 조회 개수 (기본값: 10)
         page = 1,           // 페이지 번호 (기본값: 1)
         sort = -1,          // 정렬 방식 (기본값: 생성일 내림차순)
@@ -516,6 +524,22 @@ const getItemListWithQuery = async function (query) {
         const statusListSplited = statusList.split(',').map((status) => parseInt(status));
         queryObject.itemStatus = { $in: statusListSplited };
     }
+
+    // userUUID가 없는 경우 에러 반환
+    if (!userUUID) {
+        return { itemList: [], error: '사용자 UUID가 없습니다.' };
+    }
+
+    // 조회한 User의 UUID가 itemLikedUsers, itemUnlikedUsers, itemMatchedUsers에 있는 경우, 해당 아이템은 제외하고 조회함.
+    // itemLikedUsers는 Map({ userUUID: itemUUID }) 형태이므로, userUUID가 있는지 확인
+    // itemUnlikedUsers는 List<userUUID> 형태이므로, userUUID가 있는지 확인
+    // itemMatchedUsers는 Map({ userUUID: itemUUID }) 형태이므로, userUUID가 있는지 확인
+    queryObject['itemLikedUsers.' + userUUID] = { $exists: false };
+    queryObject['itemUnlikedUsers'] = { $ne: userUUID };
+    queryObject['itemMatchedUsers.' + userUUID] = { $exists: false };
+
+    // 본인 아이템은 조회되지 않도록 설정
+    queryObject.itemOwnerUUID = { $ne: userUUID };
 
     try {
         // 카테고리 목록이 존재하는 경우 (선호도 상관없이 카테고리 목록으로 필터링하여 검색)
@@ -593,6 +617,175 @@ const getItemListWithQuery = async function (query) {
     }
 };
 
+/**
+ * @name requestLikeItem
+ * @description 아이템 매칭 요청 함수
+ * 
+ * @param {String} myUserUUID - 사용자 UUID
+ * @param {String} myItemUUID - 아이템 UUID
+ * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
+ * 
+ * @returns {{boolean, string?}}
+ */
+const requestLikeItem = async function (myUserUUID, myItemUUID, targetItemUUID) {
+    let item = await getItemInfo(myItemUUID);
+    let targetItem = await getItemInfo(targetItemUUID);
+
+    // 아이템이 존재하지 않는 경우 에러 반환
+    if (!item || !targetItem) {
+        return { success: false, error: '아이템이 존재하지 않습니다.' };
+    }
+
+    // 본인 소유 아이템으로 target과 매칭하려 하는 지 확인
+    if (item.itemOwnerUUID !== myUserUUID) {
+        return { success: false, error: '본인 소유 아이템으로만 매칭 요청이 가능합니다.' };
+    }
+
+    // 본인 아이템에 대한 매칭 요청인 경우 에러 반환
+    if (myItemUUID === targetItemUUID) {
+        return { success: false, error: '본인 아이템에 대한 매칭 요청은 불가능합니다.' };
+    }
+
+    // 이미 매칭된 아이템인 경우 에러 반환
+    if (item.itemMatchedUsers.has(targetItem.itemOwnerUUID)) {
+        return { success: false, error: '이미 매칭된 아이템입니다.' };
+    }
+
+    // 이미 Like한 아이템인 경우 바로 성공 반환
+    if (targetItem.itemLikedUsers.has(myUserUUID)) {
+        return { success: true }; 
+    }
+
+    // 이미 Unlike한 아이템인 경우, Like 후 성공 반환
+    if (targetItem.itemUnlikedUsers.includes(myUserUUID)) {
+        targetItem.itemUnlikedUsers = targetItem.itemUnlikedUsers.filter((userUUID) => userUUID !== myUserUUID);
+    }
+
+    // Map({ userUUID: itemUUID })을 itemLikedUsers에 추가
+    targetItem.itemLikedUsers.set(myUserUUID, myItemUUID);
+
+    // TODO: 알림 서비스 연동 필요
+
+    // 매칭 신청 유저 목록 업데이트
+    try {
+        await targetItem.save();
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error };
+    }
+}
+
+/**
+ * @name requestUnlikeItem
+ * @description 아이템 비매칭 요청 함수
+ * 
+ * @param {String} userUUID - 사용자 UUID
+ * @param {String} targetItemUUID - 비매칭 대상 아이템 UUID
+ * 
+ * @returns {{boolean, string?}}
+ */
+const requestUnlikeItem = async function (userUUID, targetItemUUID) {
+    const targetItem = await getItemInfo(targetItemUUID);
+
+    // 아이템이 존재하지 않는 경우 에러 반환
+    if (!targetItem) {
+        return { success: false, error: '아이템이 존재하지 않습니다.' };
+    }
+
+    // 이미 비매칭 요청한 아이템인 경우 바로 성공 반환
+    if (targetItem.itemUnlikedUsers.includes(userUUID)) {
+        return { success: true };
+    }
+
+    // 이미 매칭된 아이템인 경우 에러 반환
+    if (targetItem.itemMatchedUsers.has(userUUID)) {
+        return { success: false, error: '이미 매칭된 아이템입니다.' };
+    }
+
+    // 이미 Like한 아이템인 경우, 에러 반환
+    if (targetItem.itemLikedUsers.has(userUUID)) {
+        return { success: false, error: '이미 Like한 아이템입니다.' };
+    }
+
+    // Map({ userUUID: itemUUID })을 itemUnlikedUsers에 추가
+    targetItem.itemUnlikedUsers.push(userUUID);
+
+    // TODO: Target 사용자에게 알림 전송
+
+    // 비매칭 신청 유저 목록 업데이트
+    try {
+        await targetItem.save();
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error };
+    }
+}
+
+/**
+ * @name requestMatchItem
+ * @description 아이템 매칭 요청 함수
+ * 
+ * ### Notes
+ * - 아이템 소유자가 ItemLikedUsers 중에 한 요청을 골라서 매칭을 확정 짓는 요청을 보내는 함수
+ * - ItemLikedUsers에서 Map을 삭제하고 ItemMatchedUsers에 추가
+ * - 매칭 요청을 받은 아이템과 매칭 요청을 보낸 아이템의 Status를 1로 변경
+ * - 두 유저 간의 채팅방을 생성하고, 채팅방 ID를 두 유저의 ChatRooms에 추가
+ * - 두 유저에게 알림을 전송 (TODO: 알림 서비스 연동 필요)
+ * 
+ * @param {String} myUserUUID - 사용자 UUID
+ * @param {String} myItemUUID - 아이템 UUID
+ * @param {String} targetUserUUID - 매칭 대상 사용자 UUID
+ * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
+ * 
+ * @returns {{String, String?}}
+ * - [String] chatRoomID: 채팅방 ID
+ * - [String]? error: 에러 메시지
+ */
+const requestMatchItem = async function (myUserUUID, myItemUUID, targetUserUUID, targetItemUUID) {
+    // 아이템 조회
+    const myItem = await getItemInfo(myItemUUID);
+    const targetItem = await getItemInfo(targetItemUUID);
+
+    // 아이템이 존재하지 않는 경우 에러 반환
+    if (!myItem || !targetItem) {
+        return { chatRoomID: null, error: '아이템이 존재하지 않습니다.' };
+    }
+
+    // myItem의 ItemLikedUsers에서 targetUserUUID의 매칭 요청 조회
+    const targetUserLikedItem = myItem.itemLikedUsers.get(targetUserUUID);
+
+    // 해당 유저의 매칭 요청이 없는 경우 에러 반환
+    if (!targetUserLikedItem) {
+        return { chatRoomID: null, error: '매칭 요청이 존재하지 않습니다.' };
+    }
+
+    // ItemLikedUsers에서 해당 유저의 매칭 요청을 삭제
+    myItem.itemLikedUsers.delete(targetUserUUID);
+
+    // ItemMatchedUsers에 해당 유저의 매칭 요청을 추가
+    myItem.itemMatchedUsers.set(targetUserUUID, targetItemUUID);
+
+    // 매칭 요청을 받은 아이템과 매칭 요청을 보낸 아이템의 Status를 1로 변경
+    targetItem.itemStatus = 1;
+    myItem.itemStatus = 1;
+
+    // Item 저장
+    try {
+        await myItem.save();
+        await targetItem.save();
+    } catch (error) {
+        return { chatRoomID: null, error: error };
+    }
+
+    // 채팅방 생성 및 ID 반환 (TODO: 중복 방지 로직 필요)
+    const chatRoomID = uuidv4();
+
+    // TODO: 알림 서비스 연동 필요
+
+    // TODO: 채팅방 생성 및 ID 반환
+    return { chatRoomID, error: null };
+}
+
 exports.addItem = addItem;
 exports.parameterCheckForAddItem = parameterCheckForAddItem;
 exports.getUsersItemList = getUsersItemList;
@@ -600,3 +793,6 @@ exports.updateItem = updateItem;
 exports.getItemInfo = getItemInfo;
 exports.deleteItem = deleteItem;
 exports.getItemListWithQuery = getItemListWithQuery;
+exports.requestLikeItem = requestLikeItem;
+exports.requestUnlikeItem = requestUnlikeItem;
+exports.requestMatchItem = requestMatchItem;
