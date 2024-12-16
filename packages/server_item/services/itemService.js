@@ -244,9 +244,10 @@ const addItem = async function (itemData) {
     });
 
     // 아이템 저장 및 결과 반환
-    try {
-        await newItem.save();
-        return { success: true };
+    try 
+    {
+        const result = await newItem.save();
+        return { success: result !== null };
     } catch (error) {
         return { success: false, error: error };
     }
@@ -488,7 +489,6 @@ const getItemListWithQuery = async function (query) {
         // Number 또는 Number로 변환 가능한 문자열이 아닌 경우 에러 반환
         const convertedPriceMax = parseInt(priceMax);
         if (isNaN(convertedPriceMax) || convertedPriceMax < 0) {
-            console.log(typeof priceMax);
             return { itemList: [], error: '유효하지 않은 최대 가격' };
         }
         queryObject.itemPrice = { ...queryObject.itemPrice, $lte: priceMax };

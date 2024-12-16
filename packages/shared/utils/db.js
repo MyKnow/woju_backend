@@ -4,6 +4,12 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 
 let mongoServer;
 
+/**
+ * @name connections
+ * @description MongoDB 연결 객체를 저장하는 객체
+ * 
+ * @type {Map<String, mongoose.Connection>}
+ */
 const connections = {};
 
 /** # MongoDB 연결 함수
@@ -53,6 +59,7 @@ const connectDB = async function (dbName, dbUri) {
     });
 
     connections[dbName] = connection;
+
     return connection;
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
@@ -80,14 +87,7 @@ const disconnectDB = async function (dbName) {
   }
   
   try {
-    if (process.env.NODE_ENV === 'test') {
-      // MongoMemoryServer 인스턴스를 종료함
-
-      if (mongoServer) {
-        await mongoServer.stop();
-      }
-    } else {
-      // MongoDB와의 연결을 끊음
+    if (process.env.NODE_ENV !== 'test') {
       await connections[dbName].close();
     }
 
@@ -95,6 +95,9 @@ const disconnectDB = async function (dbName) {
 
     // 모든 연결이 해제되면 모든 mongoose 인스턴스를 종료함
     if (Object.keys(connections).length === 0) {
+      if (process.env.NODE_ENV === 'test') {
+        await mongoServer.stop();
+      }
       await mongoose.disconnect();
     }
 
