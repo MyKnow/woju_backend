@@ -601,8 +601,12 @@ exports.updateUserInfo = async (req, res) => {
       // userFavoriteCategories 필드 검사
       // userFavoriteCategories의 Map의 key는 카테고리 String, value는 선호도 Number여야 하며, 선호도는 0부터 N까지의 중복되지 않은 정수여야 함
       // userFavoriteCategories의 Key는 CategoryType에 있는 카테고리 중 하나여야 함
+      // userFavoriteCategories가 null인 경우, 빈 객체로 변경
       // 입력 예시 :  userFavoriteCategories:  { furniture: 0, lifestyle: 1 }
-      if (!isValidCategoryMap(userFavoriteCategories)) {
+      let updatedUserFavoriteCategories = userFavoriteCategories;
+      if (!updatedUserFavoriteCategories || updatedUserFavoriteCategories === null) {
+        updatedUserFavoriteCategories = {};
+      } else if (!isValidCategoryMap(userFavoriteCategories)) {
         return res.status(400).json({ failureReason: FailureReason.INVALID_PARAMETER, message: '카테고리 정보가 올바르지 않습니다.' });
       }
 
@@ -619,7 +623,7 @@ exports.updateUserInfo = async (req, res) => {
           userBirthDate: userBirthDate, 
           termsVersion: termsVersion, 
           privacyVersion: privacyVersion,
-          userFavoriteCategories: userFavoriteCategories
+          userFavoriteCategories: updatedUserFavoriteCategories
         }
       );
 
