@@ -2,7 +2,7 @@
 
 const { isAfter } = require('date-fns');
 const mongoose = require('mongoose');
-const { connectDB, disconnectDB, isMongoDBConnected, DBType } = require('../packages/shared/utils/db');
+const { connectDB, disconnectDB, isMongoDBConnected, DBType, DBUri } = require('../packages/shared/utils/db');
 
 
 describe('DB Utility Test', () => {
@@ -19,8 +19,8 @@ describe('DB Utility Test', () => {
     it('DB 연결 테스트 (테스트 환경)', async () => {
         process.env.NODE_ENV = 'test';
 
-        const dbTypes = [DBType.USER, DBType.ITEM, DBType.POLICY];
-        const dbUris = [process.env.MONGO_USER_DB_URI, process.env.MONGO_ITEM_DB_URI, process.env.MONGO_POLICY_DB_URI];
+        const dbTypes = [DBType.USER, DBType.ITEM, DBType.POLICY, DBType.CHAT];
+        const dbUris = [DBUri.USER, DBUri.ITEM, DBUri.POLICY, DBUri.CHAT];
 
         await Promise.all(dbTypes.map((dbType, index) => connectDB(dbType, dbUris[index])));
         dbTypes.forEach(dbType => expect(isMongoDBConnected(dbType)).toBeTruthy());
@@ -34,7 +34,7 @@ describe('DB Utility Test', () => {
         process.env.NODE_ENV = 'production';
 
         const dbTypes = [DBType.USER, DBType.ITEM, DBType.POLICY];
-        const dbUris = [process.env.MONGO_USER_DB_URI, process.env.MONGO_ITEM_DB_URI, process.env.MONGO_POLICY_DB_URI];
+        const dbUris = [DBUri.USER, DBUri.ITEM, DBUri.POLICY];
 
         await Promise.all(dbTypes.map((dbType, index) => connectDB(dbType, dbUris[index])));
         dbTypes.forEach(dbType => expect(isMongoDBConnected(dbType)).toBeTruthy());

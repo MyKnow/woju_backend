@@ -132,11 +132,13 @@ const isMongoDBConnected = (dbName) => {
  * @property {String} USER - User DB
  * @property {String} ITEM - Item DB
  * @property {String} POLICY - Policy DB
+ * @property {String} CHAT - Chat DB
  */
 const DBType = Object.freeze({
   USER: 'userDB',
   ITEM: 'itemDB',
   POLICY: 'policyDB',
+  CHAT: 'chatDB',
 });
 
 /**
@@ -144,11 +146,12 @@ const DBType = Object.freeze({
  * @description DB 모델 이름을 열거형으로 정의
  * @typedef {Object} DBName
  * ,
- * @property {String} USER - User DB 이름
- * @property {String} TempPhoneNumber - TempPhoneNumber DB 이름
- * @property {String} TempUserID - TempUserID DB 이름
- * @property {String} ITEM - Item DB 이름
- * @property {String} POLICY - Policy DB 이름
+ * @property {String} USER - User Model 이름
+ * @property {String} TempPhoneNumber - TempPhoneNumber Model 이름
+ * @property {String} TempUserID - TempUserID Model 이름
+ * @property {String} ITEM - Item Model 이름
+ * @property {String} POLICY - Policy Model 이름
+ * @property {String} CHAT - Chat Model 이름
  */
 const DBName = Object.freeze({
   USER: 'userModel',
@@ -156,6 +159,25 @@ const DBName = Object.freeze({
   TEMP_USER_ID: 'tempUserIDModel',
   ITEM: 'itemModel',
   POLICY: 'policyModel',
+  CHAT: 'chatModel',
 });
 
-module.exports = { connectDB, disconnectDB, isMongoDBConnected, DBType, DBName };
+/**
+ * @name DBUrl
+ * @description DB URI를 열거형으로 정의
+ * 
+ * @typedef {Object} DBUri
+ * 
+ * @property {String} USER - User DB URI
+ * @property {String} ITEM - Item DB URI
+ * @property {String} POLICY - Policy DB URI
+ * @property {String} CHAT - Chat DB URI
+ */
+const DBUri = Object.freeze({
+  USER: process.env.MONGO_USER_DB_URI,
+  ITEM: process.env.MONGO_ITEM_DB_URI,
+  POLICY: process.env.MONGO_POLICY_DB_URI,
+  CHAT: process.env.MONGO_CHAT_DB_URI,
+});
+
+module.exports = { connectDB, disconnectDB, isMongoDBConnected, DBType, DBName, DBUri };

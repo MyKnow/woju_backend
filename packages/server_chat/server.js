@@ -10,9 +10,8 @@ const { connectDB, DBType, DBUri } = require('../shared/utils/db'); // DB 연결
 const { logger, httpLogger } = require('../shared/utils/logger');
 
 // 필요한 라우터 가져오기
-const userRoutes = require('./routes/userRoutes');
-const serviceRoutes = require('./routes/serviceRoutes');
-const policyRoutes = require('./routes/policyRoutes');
+const chatRoutes = require('./routes/chatRoutes');
+const serviceRoutes = require('./routes/chatRoutes');
 
 // Express 앱 생성
 const app = express();
@@ -61,26 +60,16 @@ connectDB(DBType.USER, DBUri.USER) // user DB 연결
     console.error(err);
   });
 
-connectDB(DBType.POLICY, DBUri.POLICY) // policy DB 연결
+connectDB(DBType.CHAT, DBUri.CHAT) // chat DB 연결
   .then(() => {
-    console.log('Connected to Policy DB');
-  })
-  .catch((err) => {
-    console.error(err);
-  });
-
-connectDB(DBType.ITEM, DBUri.ITEM) // item DB 연결
-  .then(() => {
-    console.log('Connected to Item DB');
+    console.log('Connected to Chat DB');
   })
   .catch((err) => {
     console.error(err);
   });
 
 // 라우터 설정
-app.use('/api/user', userRoutes); // "/api/user" 경로로 시작하는 요청은 userRoutes 라우터로 전달됩니다.
-app.use('/api/service', serviceRoutes); // "/api/service" 경로로 시작하는 요청은 serviceRoutes 라우터로 전달됩니다.
-app.use('/api/policy', policyRoutes); // "/api/policy" 경로로 시작하는 요청은 policyRoutes 라우터로 전달됩니다.
+app.use('/api/chat', chatRoutes); // "/api/chat" 경로로 시작하는 요청은 chatRoutes 라우터로 전달됩니다.
 
 // 글로벌 에러 핸들러 추가 (라우터 설정 후, 서버 실행 전)
 app.use((err, req, res, next) => {
@@ -91,7 +80,7 @@ app.use((err, req, res, next) => {
 });
 
 // 서버 실행
-const PORT = 3000;
+const PORT = 3002;
 
 app.listen(PORT, () => {
   console.log(`Server is running`);

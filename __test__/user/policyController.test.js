@@ -6,7 +6,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 
 // 필요한 Util을 불러옵니다.
-const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
+const { connectDB, disconnectDB, DBType, DBUri } = require('../../packages/shared/utils/db');
 const { generateToken } = require('../../packages/shared/utils/auth');
 
 // 필요한 Routes를 불러옵니다.
@@ -28,7 +28,7 @@ afterAll(async () => {
 // 각 테스트 실행 전 DB 상태 초기화
 beforeEach(async () => {
     // DB 연결
-    const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+    const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
   
     if (!policyDB) {
       console.error('Error connecting to User DB');
@@ -45,7 +45,7 @@ describe('정책 관련 API 테스트', () => {
     describe('GET /policy/terms', () => {
         it('정상적으로 나라별 약관을 가져온다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -64,7 +64,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('버전을 명시하지 않으면 최신 버전을 가져온다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -117,7 +117,7 @@ describe('정책 관련 API 테스트', () => {
 
 
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -163,7 +163,7 @@ describe('정책 관련 API 테스트', () => {
 
 
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -196,7 +196,7 @@ describe('정책 관련 API 테스트', () => {
 
 
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -211,7 +211,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('이미 존재하는 약관을 추가하면 409를 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -237,7 +237,7 @@ describe('정책 관련 API 테스트', () => {
     describe('PUT /policy/terms', () => {
         it('ADMIN이 나라별로 약관을 수정한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -269,7 +269,7 @@ describe('정책 관련 API 테스트', () => {
             expect(response.statusCode).toBe(400);
 
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -286,7 +286,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('ADMIN이 없으면 401을 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -306,7 +306,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('유요하지 않은 토큰이면 402를 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -357,7 +357,7 @@ describe('정책 관련 API 테스트', () => {
             expect(response.statusCode).toBe(406);
 
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -375,7 +375,7 @@ describe('정책 관련 API 테스트', () => {
     describe('DELETE /policy/terms', () => {
         it('ADMIN이 나라별로 약관을 삭제한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -402,7 +402,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('요청 바디가 올바르지 않으면 400을 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -428,7 +428,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('ADMIN이 없으면 401을 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -451,7 +451,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('유효하지 않은 토큰이면 402를 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -475,7 +475,7 @@ describe('정책 관련 API 테스트', () => {
 
         it('일반 사용자가 요청하면 403을 반환한다.', async () => {
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');
@@ -517,7 +517,7 @@ describe('정책 관련 API 테스트', () => {
             expect(response.statusCode).toBe(406);
 
             // DB 연결
-            const policyDB = await connectDB(DBType.POLICY, process.env.MONGO_USER_DB_URI);
+            const policyDB = await connectDB(DBType.POLICY, DBUri.USER);
           
             if (!policyDB) {
               console.error('Error connecting to User DB');

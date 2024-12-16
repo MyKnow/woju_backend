@@ -11,7 +11,7 @@ const { getTestLocationData } = require('../../packages/server_item/models/locat
 const { getTestSignUpUserData, createUserModel } = require('../../packages/shared/models/userModel');
 
 // 필요한 Util 불러오기
-const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
+const { connectDB, disconnectDB, DBType, DBUri } = require('../../packages/shared/utils/db');
 const { generateToken } = require('../../packages/shared/utils/auth');
 
 // 필요한 라우터 가져오기
@@ -48,8 +48,8 @@ let User;
 
 // 테스트 시작 전 DB 연결
 beforeAll(async () => {
-    itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
-    userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    itemDB = await connectDB(DBType.ITEM);
+    userDB = await connectDB(DBType.USER);
 
     if (!itemDB || !userDB) {
         console.error('Error connecting to DB');

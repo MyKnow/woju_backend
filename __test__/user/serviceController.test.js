@@ -35,7 +35,7 @@ beforeEach(async () => {
 describe('서버 연결 상태 확인 API', () => {
     it('DB가 정상적으로 연결된 상태에서는 200을 반환한다.', async () => {
         // 테스트용 MongoDB 연결
-        await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+        await connectDB(DBType.USER);
         const response = await request(app).get('/api/service/check-connection-status');
         expect(response.statusCode).toBe(200);
     });

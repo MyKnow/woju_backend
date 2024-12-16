@@ -6,7 +6,7 @@ const { createTempUserIDModel } = require('../models/tempUserIDModel');        /
 const { createUserModel } = require('../models/userModel');          // 사용자 모델
 
 // 필요한 Util 불러오기
-const { connectDB, isMongoDBConnected, DBType } = require('../utils/db');
+const { connectDB, isMongoDBConnected, DBType, DBUri } = require('../utils/db');
 
 /** # 전화번호 중복 확인 및 저장 함수
  * 
@@ -45,7 +45,7 @@ const checkPhoneNumberAvailableService = async function (userDeviceID, userPhone
       }
 
       // DB 연결
-      const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+      const userDB = await connectDB(DBType.USER, DBUri.USER);
 
       if (!userDB || isMongoDBConnected(DBType.USER) === false) {
         throw new Error('DB 연결 실패');
@@ -118,7 +118,7 @@ const checkUserIDAvailableService = async function(userUID, userID) {
       }
 
       // DB 연결
-      const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+      const userDB = await connectDB(DBType.USER, DBUri.USER);
 
       if (!userDB || isMongoDBConnected(DBType.USER) === false) {
         throw new Error('DB 연결 실패');
@@ -170,7 +170,7 @@ const checkUserIDAvailableService = async function(userUID, userID) {
  */
 const isExistUserUUID = async function (userUUID) {
   // DB 연결
-  const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+  const userDB = await connectDB(DBType.USER, DBUri.USER);
 
   if (!userDB || isMongoDBConnected(DBType.USER) === false) {
     throw new Error('DB 연결 실패');

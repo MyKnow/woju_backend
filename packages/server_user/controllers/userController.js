@@ -18,7 +18,7 @@ const { checkPhoneNumberAvailableService, checkUserIDAvailableService } = requir
 
 // 필요한 Util 불러오기
 const { generateToken } = require('../../shared/utils/auth');  // JWT 토큰 생성 함수 불러오기
-const { connectDB, isMongoDBConnected, DBType } = require('../../shared/utils/db');  // DB 연결 함수 불러오기
+const { connectDB, isMongoDBConnected, DBType, DBUri } = require('../../shared/utils/db');  // DB 연결 함수 불러오기
 const { hashPassword, comparePassword } = require('../../shared/utils/crypto');  // 비밀번호 해시화 및 비교 함수 불러오기
 
 
@@ -178,7 +178,7 @@ exports.signupUser = async (req, res) => {
       }
 
       // DB 연결
-      const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+      const userDB = await connectDB(DBType.USER, DBUri.USER);
 
       if (!userDB || isMongoDBConnected(DBType.USER) === false) {
         return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -262,7 +262,7 @@ exports.loginUser = async (req, res) => {
     let user = null;
 
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -326,7 +326,7 @@ exports.withdrawUser = async (req, res) => {
 
   try {
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -379,7 +379,7 @@ exports.updateUserPassword = async (req, res) => {
 
   try {
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -440,7 +440,7 @@ exports.resetUserPassword = async (req, res) => {
   try {
 
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -496,7 +496,7 @@ exports.checkUserExists = async (req, res) => {
   try {
 
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -545,7 +545,7 @@ exports.updateUserInfo = async (req, res) => {
 
   try {
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });
@@ -665,7 +665,7 @@ exports.updateUserPhoneNumber = async (req, res) => {
   try {
 
     // DB 연결
-    const userDB = await connectDB(DBType.USER, process.env.MONGO_USER_DB_URI);
+    const userDB = await connectDB(DBType.USER, DBUri.USER);
 
     if (!userDB || isMongoDBConnected(DBType.USER) === false) {
       return res.status(500).json({ isSuccess: false, failureReason: FailureReason.SERVER_ERROR, message: 'DB 연결 실패' });

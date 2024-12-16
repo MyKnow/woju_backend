@@ -9,7 +9,7 @@ const { isValidateLocation } = require('../models/locationModel');
 const { v4: uuidv4 } = require('uuid');
 
 // 필요한 Util 불러오기
-const { isMongoDBConnected, connectDB, DBType } = require('../../shared/utils/db');
+const { isMongoDBConnected, connectDB, DBType, DBUri } = require('../../shared/utils/db');
 
 /**
  * @name healthCheckForDB
@@ -203,7 +203,7 @@ const addItem = async function (itemData) {
     let existing;
 
     // DB 연결
-    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, DBUri.ITEM);
 
     if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
         return { success: false, error: 'DB 연결 실패' };
@@ -265,7 +265,7 @@ const addItem = async function (itemData) {
  */
 const getUsersItemList = async function (userUUID) {
     // DB 연결
-    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, DBUri.ITEM);
 
     if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
         return { itemList: [], error: 'DB 연결 실패' };
@@ -308,7 +308,7 @@ const updateItem = async function (itemData) {
     } = itemData;
 
     // DB 연결
-    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, DBUri.ITEM);
 
     if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
         return { success: false, error: 'DB 연결 실패' };
@@ -352,7 +352,7 @@ const updateItem = async function (itemData) {
  */
 const getItemInfo = async function (itemUUID) {
     // DB 연결
-    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, DBUri.ITEM);
 
     if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
         return null;
@@ -387,7 +387,7 @@ const getItemInfo = async function (itemUUID) {
  */
 const deleteItem = async function (itemUUID) {
     // DB 연결
-    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, DBUri.ITEM);
 
     if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {
         return { success: false, error: 'DB 연결 실패' };
@@ -436,7 +436,7 @@ const deleteItem = async function (itemUUID) {
  */
 const getItemListWithQuery = async function (query) {
     // MongoDB 연결 시도
-    const itemDB = await connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI);
+    const itemDB = await connectDB(DBType.ITEM, DBUri.ITEM);
 
     // MongoDB 연결 실패 시 에러 반환
     if (!itemDB || isMongoDBConnected(DBType.ITEM) === false) {

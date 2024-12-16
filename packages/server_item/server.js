@@ -6,7 +6,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 // 필요한 Utils 가져오기
-const { connectDB, DBType } = require('../shared/utils/db'); // DB 연결 로직
+const { connectDB, DBType, DBUri } = require('../shared/utils/db'); // DB 연결 로직
 const { logger, httpLogger } = require('../shared/utils/logger');
 
 // 필요한 라우터 가져오기
@@ -50,7 +50,7 @@ app.use((req, res, next) => {
 });
 
 // 연결 성공 시 콘솔에 출력
-connectDB(DBType.USER, process.env.MONGO_USER_DB_URI) // user DB 연결
+connectDB(DBType.USER, DBUri.USER) // user DB 연결
   .then(() => {
     console.log('Connected to User DB');
   })
@@ -58,7 +58,7 @@ connectDB(DBType.USER, process.env.MONGO_USER_DB_URI) // user DB 연결
     console.error(err);
   });
 
-connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI) // policy DB 연결
+connectDB(DBType.POLICY, DBUri.POLICY) // policy DB 연결
   .then(() => {
     console.log('Connected to Policy DB');
   })
@@ -66,7 +66,7 @@ connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI) // policy DB 연결
     console.error(err);
   });
 
-connectDB(DBType.ITEM, process.env.MONGO_ITEM_DB_URI) // item DB 연결
+connectDB(DBType.ITEM, DBUri.ITEM) // item DB 연결
   .then(() => {
     console.log('Connected to Item DB');
   })

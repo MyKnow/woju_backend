@@ -14,6 +14,7 @@ jobs:
         server:
           - server_user
           - server_item
+          - server_chat
 
     steps:
       - name: Checkout repository

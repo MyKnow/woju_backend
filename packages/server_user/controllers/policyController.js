@@ -5,7 +5,7 @@ const { createPolicyModel } = require('../models/policyModel');
 
 // 필요한 Utils 불러오기
 const { verifyAdmin } = require('../../shared/utils/auth');  // 미들웨어 불러오기
-const { connectDB, disconnectDB, DBType } = require('../../shared/utils/db');  // DB 연결 끊기
+const { connectDB, disconnectDB, DBType, DBUri } = require('../../shared/utils/db');  // DB 연결 끊기
 
 // 필요한 Service 불러오기
 const { getPolicyContentService, isValidPolicyType, isValidCountryType  } = require('../services/policyService');
@@ -90,7 +90,7 @@ exports.addPolicyContent = [
     }
 
     // DB 연결
-    const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+    const db = await connectDB(DBType.POLICY, DBUri.POLICY);
     if (!db) {
       return res.status(500).json({ message: 'DB 연결 실패' });
     }
@@ -152,7 +152,7 @@ exports.updatePolicyContent = [
 
 
     // DB 연결
-    const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+    const db = await connectDB(DBType.POLICY, DBUri.POLICY);
     if (!db) {
       return res.status(500).json({ message: 'DB 연결 실패' });
     }
@@ -211,7 +211,7 @@ exports.deletePolicyContent = [
 
 
     // DB 연결
-    const db = await connectDB(DBType.POLICY, process.env.MONGO_POLICY_DB_URI);
+    const db = await connectDB(DBType.POLICY, DBUri.POLICY);
     if (!db) {
       return res.status(500).json({ message: 'DB 연결 실패' });
     }
