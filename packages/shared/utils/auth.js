@@ -4,9 +4,8 @@
 const jwt = require('jsonwebtoken');
 
 /** 
- * @name verifyUser
- * @description 
- * - 사용자 인증 미들웨어
+ * @name verifyAdmin
+ * @description 관리자 인증 미들웨어
  * 
  * ## Parameters
  * @param {*} req
@@ -55,8 +54,7 @@ exports.verifyAdmin = (req, res, next) => {
 
 /**
  * @name verifyUser
- * @description
- * - 사용자 인증 미들웨어
+ * @description 사용자 인증 미들웨어
  * 
  * ## Parameters
  * @param {*} req
@@ -156,4 +154,19 @@ exports.generateToken = (role, { userUUID, adminID }) => {
   }
 
   throw new Error('유효하지 않은 역할입니다.');
+}
+
+/** # 토큰으로부터 userUUID 추출 함수
+ * @name getUserUUIDFromToken
+ * @description 토큰으로부터 userUUID를 추출하는 함수
+ * 
+ * ## Parameters
+ * @param {string} token - JWT 토큰
+ * 
+ * ## Returns
+ * @returns {string} userUUID
+ */
+exports.getUserUUIDFromToken = (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  return decoded.userUUID;
 }

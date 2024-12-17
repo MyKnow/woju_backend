@@ -189,8 +189,49 @@ const isExistUserUUID = async function (userUUID) {
   }
 };
 
+/** # 사용자 간단 정보 Schema
+ * @name getUserDisplaySchema
+ * @description 사용자 간단 정보를 반환하는 함수
+ * 
+ * ### Parameters
+ * @param {String} userUUID - 사용자 UUID
+ * 
+ * ### Returns
+ * @returns {import('../models/userModel').userDisplaySchema?} 사용자 간단 정보 객체 (null이면 사용자 정보 없음)
+ */
+const getUserDisplaySchema = async function (userUUID) {
+  // DB 연결
+  const userDB = await connectDB(DBType.USER, DBUri.USER);
+
+  if (!userDB || isMongoDBConnected(DBType.USER) === false) {
+    throw new Error('DB 연결 실패');
+  }
+
+  // 사용자 DB 모델 생성
+  const SignupUser = createUserModel(userDB);
+
+  // 사용자 UUID로 사용자 정보 조회
+  /**
+   * @type {import('../models/userModel').userSchema}
+   */
+  const user = await SignupUser.findOne({ userUUID: userUUID });
+
+  if (user !== null) {
+    return {
+      userUUID: user.userUUID,
+      userNickName: user.userNickName,
+      userProfileImage: user.userProfileImage,
+      userID: user.userID,
+      userGender: user.userGender,
+    };
+  } else {
+    return null;
+  }
+}
+
 module.exports = {
   checkPhoneNumberAvailableService,
   checkUserIDAvailableService,
   isExistUserUUID,
+  getUserDisplaySchema,
 };

@@ -4,11 +4,11 @@
 const mongoose = require('mongoose');
 
 // 필요한 모델 불러오기
-const { Category } = require('../../shared/models/categoryModel');
-const { locationSchema } = require('../models/locationModel');
+const { Category } = require('./categoryModel');
+const { locationSchema } = require('../../server_item/models/locationModel');
 
 // 필요한 Util 불러오기
-const { DBName } = require('../../shared/utils/db');
+const { DBName } = require('../utils/db');
 
 /** # Item Schema
  * @name itemSchema

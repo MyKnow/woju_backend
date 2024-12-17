@@ -62,6 +62,27 @@ const userSchema = new mongoose.Schema({
   userFavoriteCategories: { type: Map, of: Number, default: {} }, // 사용자가 좋아하는 카테고리 목록 (key: 카테고리 이름, value: 선호 순위 (0이 가장 높음))
 });
 
+/** # 사용자 간단 정보 Schema
+ * @name userDisplaySchema
+ * @description 사용자 간단 정보 Schema
+ * 
+ * @type {mongoose.Schema}
+ * 
+ * @property {String} userUUID - UUID 필드
+ * @property {String} userNickName - 닉네임
+ * @property {Buffer} userProfileImage - 프로필 이미지
+ * @property {String} userID - 사용자 아이디
+ * @property {String} userGender - 성별
+ */
+const userDisplaySchema = new mongoose.Schema({
+  userUUID: { type: String, required: true },   // UUID 필드
+  userNickName: { type: String, default: null }, // 닉네임
+  userProfileImage: { type: Buffer, default: null }, // 프로필 이미지
+  userID: { type: String, required: true },     // 사용자 아이디
+  userGender: { type: String, default: DEFAULT_GENDER }, // 성별
+});
+
+
 /**
  * @name createUserModel
  * @description 사용자 모델 생성 함수
@@ -138,4 +159,5 @@ module.exports = {
   getTestPhoneNumberUpdateData,
   getTokenOfUserData,
   userSchema,
+  userDisplaySchema,
 };

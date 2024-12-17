@@ -5,18 +5,20 @@ const request = require('supertest'); // HTTP 요청을 모의하기 위해 사�
 const express = require('express');
 
 // 필요한 Model 가져오기
-const { createItemModel } = require('../../packages/server_item/models/itemModel');
+const { createItemModel } = require('../../packages/shared/models/itemModel');
 const { Category, getAllCategories } = require('../../packages/shared/models/categoryModel');
 const { getTestLocationData } = require('../../packages/server_item/models/locationModel');
 const { getTestSignUpUserData, createUserModel } = require('../../packages/shared/models/userModel');
+const { createChatModel } = require('../../packages/server_chat/models/chatModel');
 
 // 필요한 Util 불러오기
-const { connectDB, disconnectDB, DBType, DBUri } = require('../../packages/shared/utils/db');
+const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
 const { generateToken } = require('../../packages/shared/utils/auth');
 
 // 필요한 라우터 가져오기
 const itemRoutes = require('../../packages/server_item/routes/itemRoutes');
 const userRoutes = require('../../packages/server_user/routes/userRoutes');
+const chatRoutes = require('../../packages/server_chat/routes/chatRoutes');
 
 // Express 앱 생성
 const app = express();
@@ -25,6 +27,7 @@ app.use(express.json());
 // 라우터 설정
 app.use('/api/item', itemRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/chat', chatRoutes);
 
 // DB 선언
 /**
@@ -35,6 +38,10 @@ let itemDB;
  * @type {import('mongoose').Connection}
  */
 let userDB;
+/**
+ * @type {import('mongoose').Connection}
+ */
+let chatDB;
 
 // Model 선언
 /**
@@ -45,11 +52,17 @@ let Item;
  * @type {import('mongoose').Model<import('../../packages/shared/models/userModel').userSchema, {}>}
  */
 let User;
+/**
+ * @type {import('mongoose').Model<import('../../packages/server_chat/models/chatModel').chatSchema, {}>}
+ */
+let Chat;
+
 
 // 테스트 시작 전 DB 연결
 beforeAll(async () => {
     itemDB = await connectDB(DBType.ITEM);
     userDB = await connectDB(DBType.USER);
+    chatDB = await connectDB(DBType.CHAT);
 
     if (!itemDB || !userDB) {
         console.error('Error connecting to DB');
@@ -58,18 +71,21 @@ beforeAll(async () => {
 
     Item = createItemModel(itemDB);
     User = createUserModel(userDB);
+    Chat = createChatModel(chatDB);
 });
 
 // 테스트 종료 후 DB 연결 해제
 afterAll(async () => {
     await disconnectDB(DBType.ITEM);
     await disconnectDB(DBType.USER);
+    await disconnectDB(DBType.CHAT);
 });
 
 // 각 테스트 시작 전 DB 초기화
 beforeEach(async () => {
     await Item.deleteMany({});
     await User.deleteMany({});
+    await Chat.deleteMany({});
 });
 
 /**
@@ -1577,6 +1593,198 @@ describe('POST /api/item/request-unlike-item', () => {
             .post('/api/item/request-unlike-item')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(402);
+    });
+});
+
+// POST /api/item/request-match-item API 테스트
+describe('POST /api/item/request-match-item', () => {
+    it('정상적으로 아이템 매칭 요청이 되면 200 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 두번째 유저가 첫번째 유저에게 itemLike 요청
+        const likeResult = await request(app)
+            .post('/api/item/request-like-item')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .send({
+                myItemUUID: targetItemUUID,
+                targetItemUUID: myItemUUID,
+            });
+        expect(likeResult.statusCode).toBe(200);
+
+        // 첫번째 유저가 두번째 유저의 아이템을 매칭 요청
+        const response = await request(app)
+            .post('/api/item/request-match-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(200);
+
+        // getItemInfo 요청
+        const getFirstItemInfoResponse = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .query({ itemUUID: myItemUUID });
+        expect(getFirstItemInfoResponse.statusCode).toBe(200);
+        const getSecondItemInfoResponse = await request(app)
+            .get('/api/item/get-item-info')
+            .set('Authorization', `Bearer ${userToken2}`)
+            .query({ itemUUID: targetItemUUID });
+        expect(getSecondItemInfoResponse.statusCode).toBe(200);
+
+        // 두 아이템의 매칭 여부 확인
+        let firstItemMatched = false;
+        let secondItemMatched = false;
+
+        // Map{String, String} 형태로 반환되는데, key는 userUUID, value는 itemUUID
+        // 첫번째 유저의 아이템에 대한 매칭 여부 확인
+        for (const [_, value] of Object.entries(getFirstItemInfoResponse.body.item.itemMatchedUsers)) {
+            if (value === targetItemUUID) {
+                firstItemMatched = true;
+                break;
+            }
+        }
+        for (const [_, value] of Object.entries(getSecondItemInfoResponse.body.item.itemMatchedUsers)) {
+            if (value === myItemUUID) {
+                secondItemMatched = true;
+                break;
+            }
+        }
+        expect(firstItemMatched).toBe(true);
+        expect(secondItemMatched).toBe(true);
+
+        // 두 아이템의 itemLikedUsers가 정상적으로 삭제되었는 지 확인
+        let firstItemLiked = false;
+        let secondItemLiked = false;
+
+        // 좋아요 여부 확인
+        for (const [_, value] of Object.entries(getFirstItemInfoResponse.body.item.itemLikedUsers)) {
+            if (value === targetItemUUID) {
+                firstItemLiked = true;
+                break;
+            }
+        }
+        for (const [_, value] of Object.entries(getSecondItemInfoResponse.body.item.itemLikedUsers)) {
+            if (value === myItemUUID) {
+                secondItemLiked = true;
+                break;
+            }
+        }
+
+        expect(firstItemLiked).toBe(false);
+        expect(secondItemLiked).toBe(false);
+    });
+
+    it('Parameter Validation에 실패하면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 요청, 테스트를 위해 데이터를 누락시킴
+        const response = await request(app)
+            .post('/api/item/request-match-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('해당 아이템이 없으면 400 상태 코드를 반환한다.', async () => {
+        const userToken = await getUserToken(1);
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-match-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: 'testItemUUID',
+                targetItemUUID: 'testItemUUID',
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('itemLikedUsers에 없는 상태에서 요청하면 400 상태 코드를 반환한다.', async () => {
+        const userToken1 = await getUserToken(1);
+        const userToken2 = await getUserToken(2);
+
+        // 아이템 추가
+        await addItemFunction(userToken1, 1);
+        await addItemFunction(userToken2, 2);
+
+        // 내 아이템 목록 조회
+        const getFirstUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken1}`);
+        expect(getFirstUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(1, null).itemName);
+
+        // 해당 아이템의 UUID
+        const myItemUUID = getFirstUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 다른 유저의 아이템 목록 조회
+        const getSecondUsersItemListResponse = await request(app)
+            .get('/api/item/get-users-item-list')
+            .set('Authorization', `Bearer ${userToken2}`);
+        expect(getSecondUsersItemListResponse.body.itemList[0].itemName).toBe(getTestItemData(2, null).itemName);
+
+        // 해당 아이템의 UUID
+        const targetItemUUID = getSecondUsersItemListResponse.body.itemList[0].itemUUID;
+
+        // 첫번째 유저가 두번째 유저의 아이템을 좋아요 요청하지 않음
+
+        // 첫번째 유저가 두번째 유저의 아이템을 매칭 요청
+        const response = await request(app)
+            .post('/api/item/request-match-item')
+            .set('Authorization', `Bearer ${userToken1}`)
+            .send({
+                myItemUUID: myItemUUID,
+                targetItemUUID: targetItemUUID,
+            });
+        expect(response.statusCode).toBe(400);
+    });
+
+    it('Token이 없으면 401 상태 코드를 반환한다.', async () => {
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-match-item')
+            .send({ myItemUUID: 'testItemUUID' });
+        expect(response.statusCode).toBe(401);
+    });
+
+    it('Token의 userUUID가 DB에 없으면 402 상태 코드를 반환한다.', async () => {
+        const userToken = generateToken("USER", { userUUID: 'notExistUserUUID'});
+
+        // 요청
+        const response = await request(app)
+            .post('/api/item/request-match-item')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({
+                myItemUUID: 'testItemUUID',
                 targetItemUUID: 'testItemUUID',
             });
         expect(response.statusCode).toBe(402);

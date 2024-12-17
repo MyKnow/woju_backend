@@ -5,9 +5,8 @@ const { verifyUser } = require('../../shared/utils/auth');
 const { isMongoDBConnected, DBType } = require('../../shared/utils/db');
 
 // 필요한 서비스 불러오기
-const { addItem, parameterCheckForAddItem, getUsersItemList, updateItem, getItemInfo, deleteItem, getItemListWithQuery, requestLikeItem, requestUnlikeItem, requestMatchItem } = require('../services/itemService');
+const { addItem, parameterCheckForAddItem, getUsersItemList, updateItem, getItemInfo, deleteItem, getItemListWithQuery, requestLikeItem, requestUnlikeItem, requestMatchItem } = require('../../shared/services/itemService');
 const { isExistUserUUID } = require('../../shared/services/userService');
-const e = require('express');
 
 /** # GET /health-check
  * @name healthCheck
@@ -688,7 +687,7 @@ exports.requestUnlikeItem = [
  * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
  * 
  * ### Returns
- * @returns {Object} - API 응답 결과
+ * @return {String} chatroomUUID: 채팅방 UUID
  * 
  * ### Status Codes
  * @returns {200}: 아이템 매칭 신청 성공
@@ -717,36 +716,51 @@ exports.requestMatchItem = [
 
       // 아이템 존재 여부 체크
       const item = await getItemInfo(myItemUUID);
+      const targetItem = await getItemInfo(targetItemUUID);
 
       if (item === null || item === undefined) {
-        return res.status(404).json({
+        return res.status(400).json({
           success: false,
           error: '존재하지 않는 아이템입니다.',
         });
       }
+      if (targetItem === null || targetItem === undefined) {
+        return res.status(404).json({
+          success: false,
+          error: '존재하지 않는 매칭 대상 아이템입니다.',
+        });
+      }
+
+      // 실소유자인지 확인
+      if (item.itemOwnerUUID !== myUserUUID) {
+        return res.status(402).json({
+          success: false,
+          error: '본인의 아이템만 매칭 가능합니다.',
+        });
+      }
 
       // 아이템 매칭 신청
-      const result = await requestMatchItem({
+      const result = await requestMatchItem(
         myUserUUID,
         myItemUUID,
         targetItemUUID,
-      });
+      );
 
       // 결과 반환
-      if (result.success) {
+      if (result.chatroomUUID) {
         return res.status(200).json({
-          success: true,
+          chatroomUUID: result.chatroomUUID,
         });
       } else {
         return res.status(400).json({
-          success: false,
+          chatroomUUID: null,
           error: result.error,
         });
       }
     } catch (error) {
       console.error('Error in requestMatchItem controller:', error);
       return res.status(500).json({
-        success: false,
+        chatroomUUID: null,
         error: error.message,
       });
     }

@@ -1,15 +1,18 @@
 // services/itemService.js
 
 // 필요한 모델 불러오기
-const { createItemModel, itemSchema } = require('../../server_item/models/itemModel');
-const { getCategory, isValidCategory, isValidCategoryMap, getAllCategories }  = require('../../shared/models/categoryModel');
-const { isValidateLocation } = require('../models/locationModel');
+const { createItemModel, itemSchema } = require('../models/itemModel');
+const { getCategory, isValidCategory, isValidCategoryMap, getAllCategories }  = require('../models/categoryModel');
+const { isValidateLocation } = require('../../server_item/models/locationModel');
 
 // 필요한 라이브러리 불러오기
 const { v4: uuidv4 } = require('uuid');
 
 // 필요한 Util 불러오기
-const { isMongoDBConnected, connectDB, DBType, DBUri } = require('../../shared/utils/db');
+const { isMongoDBConnected, connectDB, DBType, DBUri } = require('../utils/db');
+
+// 필요한 Service 불러오기
+const { createChatRoomService } = require('../../shared/services/chatService');
 
 /**
  * @name healthCheckForDB
@@ -734,47 +737,59 @@ const requestUnlikeItem = async function (userUUID, targetItemUUID) {
  * 
  * @param {String} myUserUUID - 사용자 UUID
  * @param {String} myItemUUID - 아이템 UUID
- * @param {String} targetUserUUID - 매칭 대상 사용자 UUID
  * @param {String} targetItemUUID - 매칭 대상 아이템 UUID
  * 
  * @returns {{String, String?}}
- * - [String] chatRoomID: 채팅방 ID
+ * - [String] chatroomUUID: 채팅방 UUID
  * - [String]? error: 에러 메시지
  */
-const requestMatchItem = async function (myUserUUID, myItemUUID, targetUserUUID, targetItemUUID) {
+const requestMatchItem = async function (myUserUUID, myItemUUID, targetItemUUID) {
     // 아이템 조회
     const myItem = await getItemInfo(myItemUUID);
     const targetItem = await getItemInfo(targetItemUUID);
 
     // 아이템이 존재하지 않는 경우 에러 반환
     if (!myItem || !targetItem) {
-        return { chatRoomID: null, error: '아이템이 존재하지 않습니다.' };
+        console.log('requestMatchItem: 아이템이 존재하지 않습니다.\nmyItemUUID: ' + myItemUUID + ', targetItemUUID: ' + targetItemUUID);
+        return { chatroomUUID: null, error: '아이템이 존재하지 않습니다.' };
     }
 
-    // myItem의 ItemLikedUsers에서 targetUserUUID의 매칭 요청 조회
-    const targetUserLikedItem = myItem.itemLikedUsers.get(targetUserUUID);
-
-    // 해당 유저의 매칭 요청이 없는 경우 에러 반환
-    if (!targetUserLikedItem) {
-        return { chatRoomID: null, error: '매칭 요청이 존재하지 않습니다.' };
+    // myItem의 myItemUUID를 통해 실소유자 확인
+    if (myItem.itemOwnerUUID !== myUserUUID) {
+        return { chatroomUUID: null, error: '본인 소유 아이템으로만 매칭 요청이 가능합니다.' };
     }
+
+    // 해당 아이템의 itemLikedUsers에 targetItem의 itemOwnerUUID가 있는지 확인
+    if (!myItem.itemLikedUsers.has(targetItem.itemOwnerUUID)) {
+        return { chatroomUUID: null, error: 'Like 요청을 받은 아이템이 아닙니다.' };
+    }
+
+    // targetItem 소유자의 userUUID 확인
+    const targetUserUUID = targetItem.itemOwnerUUID;
 
     // ItemLikedUsers에서 해당 유저의 매칭 요청을 삭제
     myItem.itemLikedUsers.delete(targetUserUUID);
+    targetItem.itemLikedUsers.delete(myUserUUID);
 
     // ItemMatchedUsers에 해당 유저의 매칭 요청을 추가
     myItem.itemMatchedUsers.set(targetUserUUID, targetItemUUID);
+    targetItem.itemMatchedUsers.set(myUserUUID, myItemUUID);
 
     // 매칭 요청을 받은 아이템과 매칭 요청을 보낸 아이템의 Status를 1로 변경
     targetItem.itemStatus = 1;
     myItem.itemStatus = 1;
 
+    // 채팅방 생성 및 ID 반환
+    const createResult = await createChatRoomService(myUserUUID, myItemUUID, targetUserUUID, targetItemUUID);
+
     // Item 저장
     try {
         await myItem.save();
         await targetItem.save();
+
+        return { chatroomUUID: createResult.chatroomUUID, error: null };
     } catch (error) {
-        return { chatRoomID: null, error: error };
+        return { chatroomUUID: null, error: error };
     }
 
     // 채팅방 생성 및 ID 반환 (TODO: 중복 방지 로직 필요)
