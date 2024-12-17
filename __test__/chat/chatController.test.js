@@ -14,10 +14,10 @@ const userRoutes = require('../../packages/server_user/routes/userRoutes');
 const itemRoutes = require('../../packages/server_item/routes/itemRoutes');
 
 // 필요한 Model을 불러옵니다.
-const { createChatModel } = require('../../packages/server_chat/models/chatModel');
+const { createChatModel } = require('../../packages/shared/models/chatModel');
 const { createUserModel, getTestSignUpUserData } = require('../../packages/shared/models/userModel');
 const { Category } = require('../../packages/shared/models/categoryModel');
-const { getTestLocationData } = require('../../packages/server_item/models/locationModel');
+const { getTestLocationData } = require('../../packages/shared/models/locationModel');
 
 // 테스트용 Express 앱 설정
 const app = express();

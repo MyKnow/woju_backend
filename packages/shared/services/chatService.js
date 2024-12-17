@@ -4,7 +4,7 @@
 const { v4: uuidv4 } = require('uuid');
 
 // 필요한 모델 불러오기
-const { createChatModel, chatSchema, messageSchema } = require('../../server_chat/models/chatModel');
+const { createChatModel, chatSchema, messageSchema } = require('../models/chatModel');
 
 // 필요한 Utils 불러오기
 const { connectDB, DBType, DBUri } = require('../utils/db');
@@ -100,7 +100,7 @@ exports.createChatRoomService = async (requestUserUUID, requestItemUUID, targetU
  * @param {string} userUUID - 사용자 UUID
  * 
  * ### Result
- * @returns {import('../../server_chat/models/chatModel').chatSchema?} chat - 채팅방 정보
+ * @returns {import('../models/chatModel').chatSchema?} chat - 채팅방 정보
  * @returns {string?} message - 에러 메세지 (에러 발생 시)
  */
 exports.getChatRoomService = async (chatroomUUID) => {
@@ -182,7 +182,7 @@ exports.addChatMessageService = async (chatroomUUID, userUUID, content) => {
     }
 
     /**
-     * @type {import('../../server_chat/models/chatModel').messageSchema}
+     * @type {import('../models/chatModel').messageSchema}
      */
     const message = {
       userUUID: userUUID,
@@ -218,7 +218,7 @@ exports.addChatMessageService = async (chatroomUUID, userUUID, content) => {
  * @param {date} lastSeen - 마지막으로 본 메세지 시간
  * 
  * ### Result
- * @returns {Array.<import('../../server_chat/models/chatModel').messageSchema>?} messages - 메세지 리스트
+ * @returns {Array.<import('../models/chatModel').messageSchema>?} messages - 메세지 리스트
  * @returns {string?} message - 에러 메세지 (에러 발생 시)
  */
 exports.getChatMessagesService = async (
@@ -238,7 +238,7 @@ exports.getChatMessagesService = async (
   try {
     // 채팅방 조회
     /**
-     * @type {import('../../server_chat/models/chatModel').chatSchema}
+     * @type {import('../models/chatModel').chatSchema}
      */
     const chat = await Chat.findOne({ chatroomUUID });
 
@@ -345,7 +345,7 @@ exports.deleteChatRoomService = async (chatroomUUID, userUUID) => {
  * @param {string} userUUID - 사용자 UUID
  * 
  * ### Result
- * @returns {Array.<import('../../server_chat/models/chatModel').chatroomDisplaySchema>?} chatrooms - 채팅방 리스트
+ * @returns {Array.<import('../models/chatModel').chatroomDisplaySchema>?} chatrooms - 채팅방 리스트
  * @returns {string?} message - 에러 메세지 (에러 발생 시)
  */
 exports.getMyChatRoomsService = async (userUUID) => {
@@ -372,7 +372,7 @@ exports.getMyChatRoomsService = async (userUUID) => {
     const chatrooms = await Chat.find({ users: { $elemMatch: { userUUID } } });
 
     /**
-     * @type {Array.<import('../../server_chat/models/chatModel').chatroomDisplaySchema>}
+     * @type {Array.<import('../models/chatModel').chatroomDisplaySchema>}
      */
     const chatroomDisplayList = [];
     chatrooms.forEach((chatroom) => {

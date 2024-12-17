@@ -3,7 +3,7 @@
 // 필요한 모델 불러오기
 const { createItemModel, itemSchema } = require('../models/itemModel');
 const { getCategory, isValidCategory, isValidCategoryMap, getAllCategories }  = require('../models/categoryModel');
-const { isValidateLocation } = require('../../server_item/models/locationModel');
+const { isValidateLocation } = require('../models/locationModel');
 
 // 필요한 라이브러리 불러오기
 const { v4: uuidv4 } = require('uuid');

@@ -7,9 +7,9 @@ const express = require('express');
 // 필요한 Model 가져오기
 const { createItemModel } = require('../../packages/shared/models/itemModel');
 const { Category, getAllCategories } = require('../../packages/shared/models/categoryModel');
-const { getTestLocationData } = require('../../packages/server_item/models/locationModel');
+const { getTestLocationData } = require('../../packages/shared/models/locationModel');
 const { getTestSignUpUserData, createUserModel } = require('../../packages/shared/models/userModel');
-const { createChatModel } = require('../../packages/server_chat/models/chatModel');
+const { createChatModel } = require('../../packages/shared/models/chatModel');
 
 // 필요한 Util 불러오기
 const { connectDB, disconnectDB, DBType } = require('../../packages/shared/utils/db');
@@ -53,7 +53,7 @@ let Item;
  */
 let User;
 /**
- * @type {import('mongoose').Model<import('../../packages/server_chat/models/chatModel').chatSchema, {}>}
+ * @type {import('mongoose').Model<import('../../packages/shared/models/chatModel').chatSchema, {}>}
  */
 let Chat;
 
