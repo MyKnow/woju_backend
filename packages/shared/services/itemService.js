@@ -485,7 +485,7 @@ const getItemListWithQuery = async function (query) {
     }
 
     // 최소 가격 조건 추가 (정수만 입력 가능)
-    if (priceMin !== undefined) {
+    if (priceMin) {
         // Number 또는 Number로 변환 가능한 문자열이 아닌 경우 에러 반환
         const convertedPriceMin = parseInt(priceMin);
         if (isNaN(convertedPriceMin) || convertedPriceMin < 0) {
@@ -496,7 +496,7 @@ const getItemListWithQuery = async function (query) {
     }
 
     // 최대 가격 조건 추가
-    if (priceMax !== undefined) {
+    if (priceMax) {
         // Number 또는 Number로 변환 가능한 문자열이 아닌 경우 에러 반환
         const convertedPriceMax = parseInt(priceMax);
         if (isNaN(convertedPriceMax) || convertedPriceMax < 0) {
@@ -506,7 +506,7 @@ const getItemListWithQuery = async function (query) {
     }
 
     // 사용감 하한선 조건 추가
-    if (feelingOfUseMin !== undefined) {
+    if (feelingOfUseMin) {
         // feelingOfUseMin 보다 작은 값(지정한 상태보다 더 좋은 아이템)만 조회
         // ex) feelingOfUseMin이 3인 경우, 0, 1, 2, 3인 아이템만 조회
 
@@ -519,7 +519,7 @@ const getItemListWithQuery = async function (query) {
     }
 
     // 아이템 상태 리스트 조건 추가
-    if (statusList !== undefined) {
+    if (statusList) {
         // statusList가 문자열이 아닌 경우 에러 반환
         if (typeof statusList !== 'string') {
             return { itemList: [], error: '유효하지 않은 아이템 상태' };
