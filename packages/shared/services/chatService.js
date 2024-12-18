@@ -86,7 +86,7 @@ exports.createChatRoomService = async (requestUserUUID, requestItemUUID, targetU
       messages: [],
     });
 
-    return { chatroomUUID, message: null };
+    return { chatroomUUID: chatroomUUID, message: null };
   } catch (error) {
     return { chatroomUUID: null, message: error.message };
   }

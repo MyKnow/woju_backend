@@ -791,14 +791,6 @@ const requestMatchItem = async function (myUserUUID, myItemUUID, targetItemUUID)
     } catch (error) {
         return { chatroomUUID: null, error: error };
     }
-
-    // 채팅방 생성 및 ID 반환 (TODO: 중복 방지 로직 필요)
-    const chatRoomID = uuidv4();
-
-    // TODO: 알림 서비스 연동 필요
-
-    // TODO: 채팅방 생성 및 ID 반환
-    return { chatRoomID, error: null };
 }
 
 exports.addItem = addItem;

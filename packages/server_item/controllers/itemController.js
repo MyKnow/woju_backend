@@ -740,21 +740,24 @@ exports.requestMatchItem = [
       }
 
       // 아이템 매칭 신청
-      const result = await requestMatchItem(
+      const {chatroomUUID, error} = await requestMatchItem(
         myUserUUID,
         myItemUUID,
         targetItemUUID,
       );
+      console.log('chatroomUUID:', chatroomUUID);
+      console.log('error:', error);
 
       // 결과 반환
-      if (result.chatroomUUID) {
+      if (chatroomUUID) {
         return res.status(200).json({
-          chatroomUUID: result.chatroomUUID,
+          chatroomUUID: chatroomUUID,
+          result: null,
         });
       } else {
         return res.status(400).json({
           chatroomUUID: null,
-          error: result.error,
+          error: error,
         });
       }
     } catch (error) {

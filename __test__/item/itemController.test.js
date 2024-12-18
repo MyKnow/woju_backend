@@ -1645,6 +1645,7 @@ describe('POST /api/item/request-match-item', () => {
                 myItemUUID: myItemUUID,
                 targetItemUUID: targetItemUUID,
             });
+            console.log(response.body);
         expect(response.statusCode).toBe(200);
 
         // getItemInfo 요청
