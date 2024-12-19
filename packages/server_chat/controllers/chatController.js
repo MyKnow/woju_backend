@@ -153,7 +153,7 @@ exports.sendMessage = [
   }
 ]
 
-/** # GET /api/chat/get-my-chatroom-list
+/** # GET /api/chat/get-my-chat-rooms
  * @name getMyChatroomList
  * @description 내 채팅방 목록 조회 API
  * 

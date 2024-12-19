@@ -78,7 +78,6 @@ const userDisplaySchema = new mongoose.Schema({
   userUUID: { type: String, required: true },   // UUID 필드
   userNickName: { type: String, default: null }, // 닉네임
   userProfileImage: { type: Buffer, default: null }, // 프로필 이미지
-  userID: { type: String, required: true },     // 사용자 아이디
   userGender: { type: String, default: DEFAULT_GENDER }, // 성별
 });
 
